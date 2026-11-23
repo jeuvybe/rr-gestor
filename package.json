@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "demo": "node scripts/demo.mjs",
+    "demo:reset": "node scripts/demo.mjs --reset"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -21,6 +23,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0",
     "autoprefixer": "^10.7.0",
     "postcss": "^8.5.33",
     "tailwindcss": "^3.4.14"

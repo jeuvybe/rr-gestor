@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Save, MessageCircle, CheckCircle2, Circle } from 'lucide-react';
+import { Save, MessageCircle, CheckCircle2, Circle, Play } from 'lucide-react';
 import { Titulo } from '@/components/AppShell';
 import ConexaoWhatsApp from '@/components/ConexaoWhatsApp';
 import { Btn, Campo, Carregando, useToast } from '@/components/ui';
@@ -13,6 +13,16 @@ export default function Configuracoes() {
   const [cfg, setCfg] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [waSistema, setWaSistema] = useState('');
+  const [rodando, setRodando] = useState(false);
+  const [resumo, setResumo] = useState(null);
+  async function rodar() {
+    setRodando(true); setResumo(null);
+    const r = await fetch('/api/admin/rodar-cobrancas', { method: 'POST' });
+    const j = await r.json().catch(() => ({}));
+    setRodando(false);
+    if (!r.ok) return toast(j.erro || 'Falha ao rodar as cobranças.', false);
+    setResumo(j); toast(`${j.enviados} mensagens enviadas.`);
+  }
   useEffect(() => { sb.from('app_settings').select('*').single().then(({ data }) => setCfg(data)); }, [sb]);
 
   async function salvar(e) {
@@ -46,6 +56,12 @@ export default function Configuracoes() {
           <section className="card p-5">
             <h2 className="mb-3 font-display text-base font-semibold">Checklist</h2>
             <ul className="space-y-2 text-sm">{passos.map(([t, ok]) => <li key={t} className="flex items-center gap-2">{ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Circle className="h-4 w-4 text-slate-400" />}{t}</li>)}</ul>
+            <div className="mt-4 border-t border-line pt-4 dark:border-night-line">
+              <div className="text-sm font-semibold">Cobranças automáticas</div>
+              <p className="mt-1 text-xs text-slate-500">Rodam sozinhas todo dia às 9h. Use o botão para rodar agora (não repete quem já foi cobrado hoje).</p>
+              <Btn className="mt-3" onClick={rodar} carregando={rodando}><Play className="h-4 w-4" />Rodar cobranças agora</Btn>
+              {resumo && <p className="mt-2 text-sm">{resumo.contas} {resumo.contas === 1 ? 'conta' : 'contas'} com WhatsApp conectado · <b>{resumo.enviados} {resumo.enviados === 1 ? 'mensagem enviada' : 'mensagens enviadas'}</b> · {resumo.erros} {resumo.erros === 1 ? 'erro' : 'erros'}{resumo.pulados?.length ? ` · ${resumo.pulados.length} ${resumo.pulados.length === 1 ? 'conta pulada' : 'contas puladas'} (${[...new Set(resumo.pulados.map((p) => p.motivo))].join(', ')})` : ''}</p>}
+            </div>
             <p className="mt-3 text-xs text-slate-500">Login por telefone, cron de cobranças e variáveis de ambiente: veja o README do repositório.</p>
           </section>
         </div>

@@ -92,6 +92,16 @@ export default function AuthForm({ modo }) {
 
   return (
     <form onSubmit={enviar}>
+      {process.env.NEXT_PUBLIC_DEMO === '1' && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <div className="font-semibold">Modo demonstração</div>
+          <p className="mt-1">Banco e WhatsApp simulados no seu computador. Qualquer senha funciona; no telefone, o código é 123456.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href="/demo?como=assinante" className="inline-flex h-9 items-center rounded-lg bg-brand-navy px-3 font-semibold text-white">Entrar como assinante</a>
+            <a href="/demo?como=admin" className="inline-flex h-9 items-center rounded-lg border border-amber-400 px-3 font-semibold">Entrar como admin</a>
+          </div>
+        </div>
+      )}
       <h1 className="font-display text-[28px] font-bold leading-tight">{cadastro ? 'Crie sua conta' : 'Entrar no painel'}</h1>
       <p className="mt-1 text-slate-500 dark:text-slate-400">{cadastro ? 'Comece no plano grátis, sem cartão.' : 'Use seu e-mail ou o celular cadastrado.'}</p>
 

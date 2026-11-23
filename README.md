@@ -41,6 +41,37 @@ Planos iniciais (editáveis em **Admin › Planos do sistema**): Grátis com 5 c
 
 ---
 
+## Testar no computador (modo demonstração)
+
+O modo demonstração não precisa de conta nenhuma: banco, login e WhatsApp são simulados no seu computador e já vêm clientes, movimentações e assinantes de exemplo.
+
+Você precisa do **Node.js 20 ou mais novo** e do **Git**. No Windows, use o PowerShell ou o Prompt de Comando:
+
+```bash
+git clone https://github.com/jeuvybe/rr-gestor.git
+cd rr-gestor
+npm install
+npm run demo
+```
+
+Quando aparecer **Ready**, abra <http://localhost:3000/login>.
+
+| Para entrar como | Use |
+|---|---|
+| Assinante (Bia Net Provedor, plano Profissional) | botão **Entrar como assinante**, ou `assinante@demo.com` com qualquer senha |
+| Administrador | botão **Entrar como admin**, ou `admin@demo.com` com qualquer senha |
+| Conta nova | **Criar conta** por e-mail (qualquer senha) ou por telefone (código **123456**) |
+
+**O que dá para testar:**
+- **WhatsApp:** em **WhatsApp › Gerar QR Code**, a conexão é simulada e fica "Conectado" depois de uns segundos.
+- **Cobranças:** a manual (botão ✈ em Clientes) e a automática (**Admin › Configurações › Rodar cobranças agora**) aparecem como texto **no terminal**, no lugar do envio de verdade.
+- **Dados:** o que você muda fica salvo na pasta `.demo-data`. Para começar do zero, rode `npm run demo:reset`.
+- **Parar:** aperte `Ctrl + C` no terminal.
+
+> O modo demonstração não fala com o Supabase nem com o WhatsApp reais. A rota `/demo` e o atalho de login só existem quando ele está ligado.
+
+---
+
 ## Instalação passo a passo
 
 ### 1. Supabase (banco e login)
@@ -108,7 +139,7 @@ Enquanto isso não estiver configurado, o login por e-mail funciona normalmente.
 
 ---
 
-## Rodar no computador
+## Rodar no computador com o Supabase real
 
 ```bash
 npm install
@@ -135,7 +166,8 @@ app/
   api/cron/cobrancas        cobrança automática diária
   api/hooks/enviar-codigo   código de login pelo WhatsApp (Send SMS Hook)
 components/                 AppShell, Dashboard, ConexaoWhatsApp, AuthForm, ui
-lib/                        supabase, evolution, cobranca, envios, format, dados
+lib/                        supabase, evolution, cobranca, envios, rodarCobrancas, format, dados
+scripts/demo*               modo demonstração (banco, login e WhatsApp simulados)
 supabase/migrations/        esquema do banco, RLS, triggers e funções
 ```
 
