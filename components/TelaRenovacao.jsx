@@ -35,7 +35,7 @@ export default function TelaRenovacao({ sb, perfil, uso, sair, verificar }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-night">
+    <div className="min-h-screen bg-brand-bg dark:bg-night-bg">
       <header className="border-b border-line bg-white dark:border-night-line dark:bg-night-card">
         <div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
           <Logo className="h-7 w-9" /><span className="flex-1 font-display text-[17px] font-bold">RR Gestor</span>
@@ -51,7 +51,7 @@ export default function TelaRenovacao({ sb, perfil, uso, sair, verificar }) {
           <p className="mx-auto mt-2 max-w-xl text-slate-500 dark:text-slate-400">
             Renove a assinatura para voltar a acessar seus clientes, cobranças e relatórios. Enquanto isso, as cobranças automáticas pelo WhatsApp ficam paradas.
           </p>
-          <p className="mt-1 text-sm text-slate-400">Conta: <b className="text-brand-navy dark:text-white">{conta}</b>{perfil.plano_expira_em && <> · plano válido até {fmtData(perfil.plano_expira_em)}</>}</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Conta: <b className="text-brand-navy dark:text-white">{conta}</b>{perfil.plano_expira_em && <> · plano válido até {fmtData(perfil.plano_expira_em)}</>}</p>
         </div>
 
         <h2 className="mb-3 mt-8 font-display text-lg font-bold">1. Escolha o plano</h2>
@@ -63,7 +63,7 @@ export default function TelaRenovacao({ sb, perfil, uso, sair, verificar }) {
                 className={`card relative flex flex-col p-5 text-left transition ${sel ? 'ring-2 ring-brand-cyan' : 'hover:ring-1 hover:ring-brand-cyan/50'}`}>
                 {p.id === uso?.plano_id && <span className="absolute -top-2.5 left-4 rounded-full bg-brand-navy px-2 py-0.5 text-[11px] font-bold text-white dark:bg-white dark:text-brand-navy">Seu plano</span>}
                 <div className="flex items-center justify-between"><span className="font-display text-lg font-bold">{p.nome}</span><span className={`grid h-5 w-5 place-items-center rounded-full border-2 ${sel ? 'border-brand-cyan bg-brand-cyan text-brand-navy' : 'border-slate-300 dark:border-night-line'}`}>{sel && <Check className="h-3 w-3" />}</span></div>
-                <div className="mt-1 font-display text-2xl font-bold tabular-nums">{brl(p.preco)}<span className="text-sm font-medium text-slate-500">/mês</span></div>
+                <div className="mt-1 font-display text-2xl font-bold tabular-nums">{brl(p.preco)}<span className="text-sm font-medium text-slate-500 dark:text-slate-400">/mês</span></div>
                 <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">{p.limite_clientes == null ? 'Clientes ilimitados' : `Até ${int(p.limite_clientes)} clientes`}</div>
               </button>
             );
@@ -77,15 +77,15 @@ export default function TelaRenovacao({ sb, perfil, uso, sair, verificar }) {
             {plano && <p className="mt-2 text-sm">Valor: <b className="tabular-nums">{brl(plano.preco)}</b> por mês (plano {plano.nome}).</p>}
             {cfg?.pix_chave ? (
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-50 p-3 dark:bg-night-soft">
-                <div className="min-w-0 flex-1"><div className="text-xs text-slate-500">Chave Pix</div><div className="truncate font-semibold">{cfg.pix_chave}</div></div>
+                <div className="min-w-0 flex-1"><div className="text-xs text-slate-500 dark:text-slate-400">Chave Pix</div><div className="truncate font-semibold">{cfg.pix_chave}</div></div>
                 <Btn onClick={() => copiar(cfg.pix_chave)}><Copy className="h-4 w-4" />Copiar</Btn>
               </div>
-            ) : <p className="mt-3 text-sm text-slate-500">Peça a chave Pix ao suporte.</p>}
+            ) : <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Peça a chave Pix ao suporte.</p>}
           </div>
           <div className="flex flex-col gap-2 md:w-60">
             {zap ? <a href={zap} target="_blank" rel="noreferrer"><Btn variante="primario" className="w-full"><MessageCircle className="h-4 w-4" />Enviar comprovante</Btn></a>
-              : <p className="text-sm text-slate-500">Fale com o suporte para enviar o comprovante.</p>}
-            {cfg?.whatsapp_suporte && <p className="text-center text-xs text-slate-500">Suporte: {fmtTelefone(cfg.whatsapp_suporte.replace(/\D/g, ''))}</p>}
+              : <p className="text-sm text-slate-500 dark:text-slate-400">Fale com o suporte para enviar o comprovante.</p>}
+            {cfg?.whatsapp_suporte && <p className="text-center text-xs text-slate-500 dark:text-slate-400">Suporte: {fmtTelefone(cfg.whatsapp_suporte.replace(/\D/g, ''))}</p>}
           </div>
         </section>
 
