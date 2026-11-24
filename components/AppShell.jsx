@@ -57,15 +57,14 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
 
   const lateral = (
     <div className="flex h-full flex-col bg-brand-navy px-3 py-5 dark:bg-[#040D18]">
-      <Link href="/painel" className="mb-6 flex items-center gap-2.5 px-2"><Logo claro className="h-7 w-9" /><span className="font-display text-[17px] font-bold text-white">RR Gestor</span></Link>
-      <nav className="space-y-1">{NAV.map(Item)}</nav>
-      {perfil.is_admin && (
+      <Link href={area === 'admin' ? '/admin' : '/painel'} className="mb-6 flex items-center gap-2.5 px-2"><Logo claro className="h-7 w-9" /><span className="font-display text-[17px] font-bold text-white">RR Gestor</span></Link>
+      {area === 'admin' ? (
         <>
-          <div className="mb-2 mt-6 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Administração</div>
+          <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Administração</div>
           <nav className="space-y-1">{NAV_ADMIN.map(Item)}</nav>
         </>
-      )}
-      {uso && (
+      ) : <nav className="space-y-1">{NAV.map(Item)}</nav>}
+      {uso && area !== 'admin' && (
         <Link href="/painel/conta" className="mt-auto block rounded-xl bg-white/5 p-3.5 text-white transition hover:bg-white/10">
           <div className="flex items-center justify-between text-xs"><span className="font-semibold">Plano {uso.plano_nome}</span><span className="text-slate-400">{uso.limite == null ? 'ilimitado' : `${int(uso.usados)}/${int(uso.limite)}`}</span></div>
           {uso.limite != null && <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full ${pctUso >= 90 ? 'bg-amber-400' : 'bg-brand-cyan'}`} style={{ width: `${pctUso}%` }} /></div>}
@@ -99,7 +98,7 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
             </div>
           </header>
           {area === 'painel' && uso?.status === 'bloqueado' && (
-            <Aviso tom="vermelho" I={Lock}>Sua conta está bloqueada: você consegue consultar os dados, mas não cadastrar clientes nem enviar cobranças. Fale com o suporte.</Aviso>
+            <Aviso tom="vermelho" I={Lock}>Sua conta está desativada: você consegue consultar os dados, mas não cadastrar clientes nem enviar cobranças. Fale com o suporte.</Aviso>
           )}
           {area === 'painel' && uso?.vencido && uso?.status !== 'bloqueado' && (
             <Aviso tom="ambar" I={AlertTriangle}>Seu plano pago venceu em {fmtData(uso.expira_em)}. Até a renovação, vale o limite do plano {uso.plano_nome} ({uso.limite ?? '∞'} clientes). <Link href="/painel/conta" className="font-semibold underline">Renovar</Link></Aviso>

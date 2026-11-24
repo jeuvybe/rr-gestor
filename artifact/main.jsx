@@ -59,6 +59,7 @@ function Protegido({ area, children, chave }) {
       const [{ data: perfil }, { data: uso }] = await Promise.all([sb.from('profiles').select('*').eq('id', user.id).single(), sb.rpc('meu_uso')]);
       if (!perfil) return ir('/login');
       if (area === 'admin' && !perfil.is_admin) return ir('/painel');
+      if (area === 'painel' && perfil.is_admin) return ir('/admin');
       if (vivo) setEstado({ perfil, uso: uso?.[0] || null });
     })();
     return () => { vivo = false; };

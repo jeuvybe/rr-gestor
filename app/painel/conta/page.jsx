@@ -54,7 +54,7 @@ export default function Conta() {
           <section className="card p-5">
             <div className="flex items-start justify-between gap-3">
               <div><div className="text-sm text-slate-500 dark:text-slate-400">Seu plano</div><div className="font-display text-2xl font-bold">{uso?.plano_nome}</div></div>
-              {uso?.status === 'bloqueado' ? <Badge tom="vermelho">Conta bloqueada</Badge> : uso?.vencido ? <Badge tom="ambar">Plano pago vencido</Badge> : <Badge tom="verde">Ativo</Badge>}
+              {uso?.status === 'bloqueado' ? <Badge tom="vermelho">Conta desativada</Badge> : uso?.vencido ? <Badge tom="ambar">Plano pago vencido</Badge> : <Badge tom="verde">Ativo</Badge>}
             </div>
             <div className="mt-4 text-sm">
               <div className="flex justify-between"><span>Clientes ativos</span><b>{int(uso?.usados || 0)}{uso?.limite != null ? ` de ${int(uso.limite)}` : ' (ilimitado)'}</b></div>

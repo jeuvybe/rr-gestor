@@ -24,7 +24,7 @@ export async function middleware(request) {
   }
   if (user && (pathname === '/login' || pathname === '/cadastro')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/painel';
+    url.pathname = '/painel'; // o painel manda o administrador para /admin
     url.search = '';
     return NextResponse.redirect(url);
   }
