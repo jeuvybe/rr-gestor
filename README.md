@@ -62,7 +62,7 @@ Quando aparecer **Ready**, abra <http://localhost:3000/login>.
 
 | Para entrar como | Use |
 |---|---|
-| Assinante (Bia Net Provedor, plano Profissional) | botão **Entrar como assinante**, ou `assinante@demo.com` com qualquer senha |
+| Assinante (Sua Empresa, plano Profissional) | botão **Entrar como assinante**, ou `assinante@demo.com` com qualquer senha |
 | Administrador | botão **Entrar como admin**, ou `admin@demo.com` com qualquer senha |
 | Conta nova | **Criar conta** por e-mail (qualquer senha) ou por telefone (código **123456**) |
 | Área do cliente | link em **Clientes › Área do cliente**; entre com usuário `cliente.demo` e senha `1234` |

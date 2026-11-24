@@ -257,7 +257,7 @@ export function criarNucleo(db, opts = {}) {
     if (p.startsWith('/instance/connect')) { instancias[nome] = { state: 'connecting', desde: Date.now() }; return responder(res, 200, { base64: qrFalso() }); }
     if (p.startsWith('/instance/fetchInstances')) {
       const n = url.searchParams.get('instanceName') || '';
-      return responder(res, 200, [{ name: n, ownerJid: (n === opts.sistema ? '5585900000000' : '5585988887777') + '@s.whatsapp.net', profileName: 'WhatsApp de teste' }]);
+      return responder(res, 200, [{ name: n, ownerJid: (n === opts.sistema ? '5500900000000' : '5500988887777') + '@s.whatsapp.net', profileName: 'WhatsApp de teste' }]);
     }
     if (p.startsWith('/instance/logout')) { if (instancias[nome]) instancias[nome].state = 'close'; return responder(res, 200, { status: 'SUCCESS' }); }
     if (p.startsWith('/message/sendText')) {

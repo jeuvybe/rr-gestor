@@ -77,7 +77,7 @@ export default function ModelosMensagem({ sb, perfil }) {
             <Interruptor ligado={form.fast} onChange={(v) => setForm({ ...form, fast: v })} rotulo="Marcar como FAST" desc="O botão FAST da lista de clientes envia este modelo na hora. Só um modelo pode ser FAST." />
             <div className="rounded-xl bg-[#E7F8EE] p-3 text-[13px] leading-snug text-[#1F2C34] dark:bg-[#0B3B2E] dark:text-emerald-50">
               <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-60">Pré-visualização</div>
-              <div className="whitespace-pre-wrap">{montaMensagem(form.texto, { cliente: exemplo, plano: { nome: 'SERVIÇO 35-M' }, perfil, hoje, servidor: { nome: 'ZEUS' }, pagamento: { valor: 35, data: hoje } })}</div>
+              <div className="whitespace-pre-wrap">{montaMensagem(form.texto, { cliente: exemplo, plano: { nome: 'SERVIÇO 35-M' }, perfil, hoje, servidor: { nome: 'ALFA' }, pagamento: { valor: 35, data: hoje } })}</div>
             </div>
           </form>
         )}

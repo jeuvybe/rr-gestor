@@ -1,8 +1,8 @@
-// Dados de exemplo do modo demonstração (fictícios, gerados com datas relativas a hoje)
+// Dados de exemplo do modo demonstração: tudo fictício (empresas, servidores, telefones com DDD 00), com datas relativas a hoje
 
 export const USUARIOS_DEMO = {
   admin: { id: '11111111-1111-4111-8111-111111111111', email: 'admin@demo.com', nome: 'Rafael Rocha', empresa: 'RR Tecnologia' },
-  assinante: { id: '22222222-2222-4222-8222-222222222222', email: 'assinante@demo.com', nome: 'Beatriz Alves', empresa: 'Bia Net Provedor' },
+  assinante: { id: '22222222-2222-4222-8222-222222222222', email: 'assinante@demo.com', nome: 'Beatriz Alves', empresa: 'Sua Empresa' },
 };
 
 function rng(seed) {
@@ -26,12 +26,12 @@ export async function semear(db) {
   // ---- contas
   const contas = [
     { ...USUARIOS_DEMO.admin, plano: 'Ilimitado', expira: null },
-    { ...USUARIOS_DEMO.assinante, plano: 'Profissional', expira: dia(hoje, 18), pix: 'pix@bianet.com.br', clientes: 38, meses: 9 },
-    { id: '33333333-3333-4333-8333-333333333333', email: 'carlos@techfix.com', nome: 'Carlos Menezes', empresa: 'TechFix Assistência', plano: 'Grátis', expira: null, clientes: 5, meses: 2 },
-    { id: '44444444-4444-4444-8444-444444444444', email: 'julia@studiojs.com', nome: 'Júlia Sampaio', empresa: 'Studio JS Pilates', plano: 'Profissional', expira: dia(hoje, 4), clientes: 22, meses: 5 },
-    { id: '55555555-5555-4555-8555-555555555555', email: 'marcos@netmais.com', nome: 'Marcos Lopes', empresa: 'NetMais Fibra', plano: 'Ilimitado', expira: dia(hoje, 41), clientes: 64, meses: 7 },
-    { id: '66666666-6666-4666-8666-666666666666', email: 'paula@contabil.com', nome: 'Paula Ferraz', empresa: 'Ferraz Contabilidade', plano: 'Profissional', expira: dia(hoje, -6), clientes: 12, meses: 4 },
-    { id: '77777777-7777-4777-8777-777777777777', email: 'andre@academia.com', nome: 'André Brito', empresa: 'Academia Força Total', plano: 'Grátis', expira: null, clientes: 3, meses: 1, bloqueado: true },
+    { ...USUARIOS_DEMO.assinante, plano: 'Profissional', expira: dia(hoje, 18), pix: 'pix@suaempresa.com', clientes: 38, meses: 9 },
+    { id: '33333333-3333-4333-8333-333333333333', email: 'carlos@exemplo.com', nome: 'Carlos Menezes', empresa: 'Assistência Exemplo', plano: 'Grátis', expira: null, clientes: 5, meses: 2 },
+    { id: '44444444-4444-4444-8444-444444444444', email: 'julia@exemplo.com', nome: 'Júlia Sampaio', empresa: 'Studio Exemplo', plano: 'Profissional', expira: dia(hoje, 4), clientes: 22, meses: 5 },
+    { id: '55555555-5555-4555-8555-555555555555', email: 'marcos@exemplo.com', nome: 'Marcos Lopes', empresa: 'Fibra Exemplo', plano: 'Ilimitado', expira: dia(hoje, 41), clientes: 64, meses: 7 },
+    { id: '66666666-6666-4666-8666-666666666666', email: 'paula@exemplo.com', nome: 'Paula Ferraz', empresa: 'Contabilidade Exemplo', plano: 'Profissional', expira: dia(hoje, -6), clientes: 12, meses: 4 },
+    { id: '77777777-7777-4777-8777-777777777777', email: 'andre@exemplo.com', nome: 'André Brito', empresa: 'Academia Exemplo', plano: 'Grátis', expira: null, clientes: 3, meses: 1, bloqueado: true },
   ];
   for (const c of contas) {
     await q(`insert into auth.users (id, email, raw_user_meta_data, created_at) values ($1, $2, $3, now() - make_interval(days => $4))`, [c.id, c.email, JSON.stringify({ nome: c.nome, empresa: c.empresa }), Math.round((c.meses || 10) * 30 + 5)]);
@@ -50,7 +50,7 @@ export async function semear(db) {
     }
     // ---- servidores
     const servs = [];
-    for (const [nome, cor] of [['ZEUS', '#22C55E'], ['UNIPLAY', '#7C3AED'], ['UNITV', '#7C2D12'], ['IMPERIAL', '#A3A3A3'], ['BLACK TV', '#111111']].slice(0, c.clientes > 10 ? 5 : 2)) {
+    for (const [nome, cor] of [['ALFA', '#22C55E'], ['BETA', '#7C3AED'], ['GAMA', '#C2410C'], ['DELTA', '#64748B'], ['ÔMEGA', '#111111']].slice(0, c.clientes > 10 ? 5 : 2)) {
       servs.push((await q(`insert into public.servers (owner_id, nome, cor) values ($1, $2, $3) returning id`, [c.id, nome, cor])).rows[0].id);
     }
     // ---- clientes e pagamentos
@@ -65,7 +65,7 @@ export async function semear(db) {
       let venc = x < 0.2 ? dia(hoje, -Math.floor(1 + r() * 20)) : x < 0.27 ? hoje : dia(hoje, Math.floor(1 + r() * 30 * pl.ciclo_meses));
       if (i < 2) venc = hoje;
       if (i === 2) venc = dia(hoje, 3);
-      const tel = `55859${String(8000 + Math.floor(r() * 1999)).padStart(4, '0')}${String(Math.floor(r() * 10000)).padStart(4, '0')}`;
+      const tel = `55009${String(8000 + Math.floor(r() * 1999)).padStart(4, '0')}${String(Math.floor(r() * 10000)).padStart(4, '0')}`;
       const base = nome.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       const usuario = i === 0 && c.id === USUARIOS_DEMO.assinante.id ? 'cliente.demo' : `${base}${1000 + Math.floor(r() * 9000)}`;
       const senha = i === 0 && c.id === USUARIOS_DEMO.assinante.id ? '1234' : Math.random().toString(36).slice(2, 8);
@@ -110,6 +110,6 @@ export async function semear(db) {
   }
   // WhatsApp de duas contas já "conectado" (o do assinante demo fica desconectado para você testar o QR Code)
   for (const id of ['44444444-4444-4444-8444-444444444444', '55555555-5555-4555-8555-555555555555']) {
-    await q(`insert into public.whatsapp_instances (owner_id, instance_name, status, numero) values ($1, $2, 'conectado', '5585900001111')`, [id, `rr_${id.replace(/-/g, '').slice(0, 20)}`]);
+    await q(`insert into public.whatsapp_instances (owner_id, instance_name, status, numero) values ($1, $2, 'conectado', '5500900001111')`, [id, `rr_${id.replace(/-/g, '').slice(0, 20)}`]);
   }
 }
