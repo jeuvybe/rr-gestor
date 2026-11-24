@@ -190,11 +190,13 @@ export default function Clientes() {
       )}
 
       <div className="card overflow-hidden">
-        <div className="flex gap-1 overflow-x-auto border-b border-line px-3 pt-3 dark:border-night-line" role="tablist">
+        <div className="flex flex-wrap gap-2 border-b border-line p-3 dark:border-night-line" role="tablist">
           {ABAS.map(([k, r]) => (
             <button key={k} role="tab" aria-selected={aba === k} onClick={() => setAba(k)}
-              className={`flex shrink-0 items-center gap-2 border-b-2 px-3 pb-2.5 pt-1 text-sm font-semibold transition ${aba === k ? 'border-brand-cyan text-brand-navy dark:text-white' : 'border-transparent text-slate-500 hover:text-brand-navy dark:hover:text-white'}`}>
-              {r}<span className={`rounded-full px-1.5 text-[11px] ${(k === 'inadimplentes' || k === 'alerta') && cont[k] ? 'bg-rose-500/15 text-rose-600' : k === 'hoje' && cont[k] ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' : 'bg-slate-500/10'}`}>{cont[k]}</span>
+              className={`inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition ${aba === k
+                ? 'border-brand-cyan bg-brand-cyan/15 text-brand-navy dark:text-white'
+                : 'border-line text-slate-600 hover:border-brand-cyan/60 hover:text-brand-navy dark:border-night-line dark:text-slate-300 dark:hover:text-white'}`}>
+              {r}<span className={`min-w-[22px] rounded-full px-1.5 text-center text-[11px] tabular-nums ${(k === 'inadimplentes' || k === 'alerta') && cont[k] ? 'bg-rose-500/15 text-rose-600 dark:text-rose-300' : k === 'hoje' && cont[k] ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300' : aba === k ? 'bg-brand-cyan/25' : 'bg-slate-500/15'}`}>{cont[k]}</span>
             </button>
           ))}
         </div>

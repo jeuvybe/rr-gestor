@@ -8,6 +8,10 @@ body { @apply bg-brand-bg text-brand-navy antialiased transition-colors duration
 .recharts-wrapper:focus, .recharts-surface:focus, .recharts-sector:focus, .recharts-rectangle:focus { outline: none; }
 input[type='date'] { min-height: 2.5rem; }
 .dark input[type='date'] { color-scheme: dark; }
+/* barras de rolagem discretas, que acompanham o tema */
+* { scrollbar-width: thin; scrollbar-color: rgba(100,116,139,.45) transparent; }
+.dark { color-scheme: dark; }
+.dark * { scrollbar-color: rgba(148,163,184,.35) transparent; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
 @layer components {
