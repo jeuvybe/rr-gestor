@@ -37,7 +37,7 @@ function Carregando({ texto, erro }) {
   return (
     <div className="grid min-h-screen place-items-center bg-brand-navy p-6 text-white">
       <div className="max-w-sm text-center">
-        <svg viewBox="0 0 120 92" className="mx-auto h-12 w-16" aria-hidden="true"><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="14"><path d="M10 84V9h26a19 19 0 0 1 0 38H10M32 47l18 37M66 84V9h26a19 19 0 0 1 0 38H66" stroke="#fff" /><path d="M86 47l18 37" stroke="#00B8D9" /></g></svg>
+        <svg viewBox="320 446 344 260" className="mx-auto h-12 w-16" aria-hidden="true"><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="43.5"><path d="M342.5 683V468h67.75a54.25 54.25 0 0 1 0 108.5H342.5M402.5 576.5l56 106.5" stroke="#fff" /><path d="M519 683V468h67.75a54.25 54.25 0 0 1 0 108.5H519" stroke="#fff" /><path d="M578.5 576.5l58 106.5" stroke="#00B8D9" /></g></svg>
         <div className="mt-5 font-display text-xl font-bold">RR Gestor · demonstração</div>
         {erro ? <p className="mt-3 text-sm text-rose-300">{erro}</p> : <p className="mt-3 flex items-center justify-center gap-2 text-sm text-cyan-100/80"><Loader2 className="h-4 w-4 animate-spin" />{texto}</p>}
         <p className="mt-6 text-xs text-cyan-100/50">Banco, login e WhatsApp simulados aqui mesmo, sem servidor. Nada sai desta página.</p>
