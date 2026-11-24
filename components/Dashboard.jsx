@@ -191,6 +191,9 @@ const celula = (v) => { if (typeof v === 'number') return v.toFixed(2).replace('
 const gerarCSV = (cols, rows) => '﻿' + [cols.map((c) => c[0]).join(';'), ...rows.map((r) => cols.map((c) => celula(c[1](r))).join(';'))].join('\r\n');
 
 // ================================================================== APP
+// colunas da tabela de lançamentos que somem em telas menores (data, cliente e valor ficam sempre)
+const VIS_COL = { tipo: 'hidden sm:table-cell', categoria: 'hidden md:table-cell', descricao: 'hidden lg:table-cell', plano: 'hidden xl:table-cell', forma: 'hidden xl:table-cell', status: 'hidden sm:table-cell' };
+
 export default function Dashboard({ dados, empresa }) {
   const [f, setF] = useState(FILTROS_PADRAO);
   const [escuroUI, setEscuroUI] = useState(false);
@@ -428,8 +431,8 @@ export default function Dashboard({ dados, empresa }) {
       </section>
 
         {/* filtros */}
-        <div className="no-print sticky top-16 z-10 -mx-4 border-y border-line bg-brand-bg/90 backdrop-blur transition-colors duration-300 sm:-mx-6 dark:border-night-line dark:bg-night-bg/85" data-pdf-ignore>
-          <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-6">
+        <div className="no-print sticky top-16 z-10 -mx-3 border-y border-line bg-brand-bg/90 backdrop-blur transition-colors duration-300 sm:-mx-6 dark:border-night-line dark:bg-night-bg/85" data-pdf-ignore>
+          <div className="mx-auto max-w-[90rem] px-3 py-3 sm:px-6 min-[1920px]:max-w-[105rem]">
             <button className="flex h-10 w-full items-center justify-between rounded-lg border border-line bg-white px-3 text-sm font-semibold md:hidden dark:border-night-line dark:bg-night-soft" onClick={() => setFiltrosAbertos((v) => !v)}>
               <span className="flex items-center gap-2"><SlidersHorizontal className="h-4 w-4 text-brand-cyan" />Filtros{filtrosAtivos ? ` (${filtrosAtivos})` : ''}</span><ChevronDown className={`h-4 w-4 transition ${filtrosAbertos ? 'rotate-180' : ''}`} />
             </button>
@@ -578,7 +581,7 @@ export default function Dashboard({ dados, empresa }) {
           {/* linha 3 */}
           <div id="clientes" className="grid scroll-mt-28 gap-3 md:grid-cols-2 xl:grid-cols-3" data-pdf-block>
             <Painel Icone={PieIcon} titulo={visaoCat === 'Gasto' ? 'Gastos por categoria' : 'Receitas por categoria'} sub="Clique numa fatia para filtrar"
-              acao={<div className="flex rounded-lg border border-line p-0.5 text-xs font-semibold dark:border-night-line" data-pdf-ignore>{[['Gasto', 'Gastos'], ['Ganho', 'Receitas']].map(([k, r]) => <button key={k} onClick={() => setVisaoCat(k)} className={`rounded-md px-2.5 py-1 transition ${visaoCat === k ? 'bg-brand-navy text-white dark:bg-brand-cyan dark:text-brand-navy' : 'text-slate-500'}`}>{r}</button>)}</div>}>
+              acao={<div className="flex rounded-lg border border-line p-0.5 text-xs font-semibold dark:border-night-line" data-pdf-ignore>{[['Gasto', 'Gastos'], ['Ganho', 'Receitas']].map(([k, r]) => <button key={k} onClick={() => setVisaoCat(k)} className={`rounded-md px-2.5 py-1 transition touch:px-3 touch:py-2 ${visaoCat === k ? 'bg-brand-navy text-white dark:bg-brand-cyan dark:text-brand-navy' : 'text-slate-500'}`}>{r}</button>)}</div>}>
               {porCategoria.l.length ? (
                 <div className="flex flex-col items-center gap-3 sm:flex-row xl:flex-col 2xl:flex-row">
                   <div className="relative h-[190px] w-[190px] shrink-0">
@@ -654,12 +657,12 @@ export default function Dashboard({ dados, empresa }) {
               </label>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] text-sm">
+              <table className="w-full text-sm xl:min-w-[860px]">
                 <thead>
                   <tr className="border-y border-line bg-slate-50 text-left text-xs font-semibold text-slate-500 dark:border-night-line dark:bg-night-soft/60 dark:text-slate-400">
                     {[['data', 'Data'], ['tipo', 'Tipo'], ['categoria', 'Categoria'], ['descricao', 'Descrição'], ['cliente', 'Cliente'], ['plano', 'Plano'], ['forma', 'Forma'], ['status', 'Status'], ['valor', 'Valor']].map(([k, r]) => (
-                      <th key={k} className={`px-4 py-2.5 ${k === 'valor' ? 'text-right' : ''}`}>
-                        <button onClick={() => setOrdem((o) => ({ col: k, dir: o.col === k ? -o.dir : k === 'valor' || k === 'data' ? -1 : 1 }))} className="inline-flex items-center gap-1 hover:text-brand-navy dark:hover:text-white">
+                      <th key={k} className={`px-3 py-2.5 sm:px-4 ${k === 'valor' ? 'text-right' : ''} ${VIS_COL[k] || ''}`}>
+                        <button onClick={() => setOrdem((o) => ({ col: k, dir: o.col === k ? -o.dir : k === 'valor' || k === 'data' ? -1 : 1 }))} className="alvo inline-flex items-center gap-1 hover:text-brand-navy dark:hover:text-white">
                           {r}{ordem.col === k && (ordem.dir > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
                         </button>
                       </th>
@@ -669,29 +672,27 @@ export default function Dashboard({ dados, empresa }) {
                 <tbody className="divide-y divide-line dark:divide-night-line">
                   {linhas.map((m) => (
                     <tr key={m.id} className="transition hover:bg-slate-50 dark:hover:bg-night-soft/50">
-                      <td className="whitespace-nowrap px-4 py-2.5 tabular-nums">{fmtData(m.data)}</td>
-                      <td className="px-4 py-2.5"><span className={`inline-flex items-center gap-1 text-xs font-semibold ${m.tipo === 'Ganho' ? 'text-[#0095B0] dark:text-brand-cyan' : 'text-rose-600 dark:text-rose-400'}`}>{m.tipo === 'Ganho' ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}{m.tipo}</span></td>
-                      <td className="px-4 py-2.5">{m.categoria}</td>
-                      <td className="max-w-[240px] truncate px-4 py-2.5 text-slate-600 dark:text-slate-300" title={m.descricao}>{m.descricao || '—'}</td>
-                      <td className="max-w-[180px] truncate px-4 py-2.5">{m.cliente || '—'}</td>
-                      <td className="px-4 py-2.5">{m.plano || '—'}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5">{m.forma}</td>
-                      <td className="px-4 py-2.5"><span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${STATUS_COR[m.status]}`}>{m.status}</span></td>
-                      <td className={`whitespace-nowrap px-4 py-2.5 text-right font-semibold tabular-nums ${m.tipo === 'Gasto' ? 'text-rose-600 dark:text-rose-400' : ''}`}>{m.tipo === 'Gasto' ? '−' : ''}{brl(m.valor)}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 tabular-nums sm:px-4">{fmtData(m.data)}</td>
+                      <td className={`px-4 py-2.5 ${VIS_COL.tipo}`}><span className={`inline-flex items-center gap-1 text-xs font-semibold ${m.tipo === 'Ganho' ? 'text-[#0095B0] dark:text-brand-cyan' : 'text-rose-600 dark:text-rose-400'}`}>{m.tipo === 'Ganho' ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}{m.tipo}</span></td>
+                      <td className={`px-4 py-2.5 ${VIS_COL.categoria}`}>{m.categoria}</td>
+                      <td className={`max-w-[240px] truncate px-4 py-2.5 text-slate-600 dark:text-slate-300 ${VIS_COL.descricao}`} title={m.descricao}>{m.descricao || '—'}</td>
+                      <td className="max-w-[180px] truncate px-3 py-2.5 sm:px-4">{m.cliente || '—'}</td>
+                      <td className={`px-4 py-2.5 ${VIS_COL.plano}`}>{m.plano || '—'}</td>
+                      <td className={`whitespace-nowrap px-4 py-2.5 ${VIS_COL.forma}`}>{m.forma}</td>
+                      <td className={`px-4 py-2.5 ${VIS_COL.status}`}><span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${STATUS_COR[m.status]}`}>{m.status}</span></td>
+                      <td className={`whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums sm:px-4 ${m.tipo === 'Gasto' ? 'text-rose-600 dark:text-rose-400' : ''}`}>{m.tipo === 'Gasto' ? '−' : ''}{brl(m.valor)}</td>
                     </tr>
                   ))}
                   {!linhas.length && <tr><td colSpan={9} className="px-4 py-10 text-center text-slate-400">Nenhuma movimentação encontrada.</td></tr>}
                 </tbody>
-                {!!tabela.length && (
-                  <tfoot>
-                    <tr className="border-t border-line text-sm dark:border-night-line">
-                      <td colSpan={8} className="px-4 py-3 text-right text-slate-500">Resultado dos {int(tabela.length)} lançamentos</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right font-display font-bold tabular-nums">{brl(tabela.reduce((a, m) => a + (m.tipo === 'Gasto' ? -m.valor : m.valor), 0))}</td>
-                    </tr>
-                  </tfoot>
-                )}
               </table>
             </div>
+            {!!tabela.length && (
+              <div className="flex flex-wrap items-baseline justify-end gap-x-3 border-t border-line px-3 py-3 text-sm sm:px-4 dark:border-night-line">
+                <span className="text-slate-500">Resultado dos {int(tabela.length)} lançamentos</span>
+                <span className="whitespace-nowrap font-display font-bold tabular-nums">{brl(tabela.reduce((a, m) => a + (m.tipo === 'Gasto' ? -m.valor : m.valor), 0))}</span>
+              </div>
+            )}
             {!imprimindo && totPag > 1 && (
               <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3 text-sm dark:border-night-line" data-pdf-ignore>
                 <span className="text-slate-500">Página {pagina + 1} de {totPag}</span>

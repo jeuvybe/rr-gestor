@@ -92,7 +92,7 @@ function Conteudo({ slug }) {
           <section className="card p-5">
             <div className="text-sm font-semibold">Pague com Pix</div>
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-3 dark:bg-night-soft">
-              <div className="min-w-0 flex-1"><div className="text-xs text-slate-500">Chave Pix de {e.nome}</div><div className="break-all font-semibold">{e.pix}</div></div>
+              <div className="min-w-0 flex-1 basis-44"><div className="text-xs text-slate-500">Chave Pix de {e.nome}</div><div className="font-semibold [overflow-wrap:anywhere]">{e.pix}</div></div>
               <Btn onClick={() => copiar(e.pix)}><Copy className="h-4 w-4" />Copiar</Btn>
             </div>
             {wa && <a href={wa} target="_blank" rel="noreferrer" className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 font-semibold text-white hover:bg-emerald-600"><MessageCircle className="h-4 w-4" />Já paguei: enviar comprovante</a>}

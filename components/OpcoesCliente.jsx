@@ -99,17 +99,17 @@ export default function OpcoesCliente({ c, hoje, perfil, sb, plano, servidor, mo
   return (
     <Modal aberto onFechar={onFechar} titulo={titulo} largura="max-w-3xl">
       {/* cabeçalho com os dados principais */}
-      <div className="mb-4 flex flex-wrap items-center gap-4 rounded-xl border border-line p-4 dark:border-night-line">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full font-display text-xl font-bold text-white" style={{ background: servidor?.cor || '#0A1F3A' }}>{c.nome.trim().charAt(0).toUpperCase()}</span>
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-line p-3 sm:p-4 dark:border-night-line">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full font-display text-xl font-bold sm:h-14 sm:w-14 text-white" style={{ background: servidor?.cor || '#0A1F3A' }}>{c.nome.trim().charAt(0).toUpperCase()}</span>
         <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="truncate font-display text-lg font-bold">{c.nome}</div>
+          <div className="break-words font-display text-lg font-bold leading-tight">{c.nome}</div>
           <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-slate-500 dark:text-slate-400">
             {c.usuario && <span className="inline-flex items-center gap-1"><User className="h-3.5 w-3.5" />{c.usuario}</span>}
             <a href={`https://wa.me/${c.whatsapp}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#007F98] dark:text-brand-cyan"><MessageCircle className="h-3.5 w-3.5" />{fmtTelefone(c.whatsapp)}</a>
             {servidor && <span className="inline-flex items-center gap-1"><Server className="h-3.5 w-3.5" />{servidor.nome}</span>}
           </div>
         </div>
-        <div className="space-y-1 text-right text-sm">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-sm sm:block sm:w-auto sm:space-y-1 sm:border-0 sm:pt-0 sm:text-right dark:border-night-line">
           <div className="font-semibold">{plano?.nome || 'Sem plano'} · {brl(c.valor)}</div>
           <div className="inline-flex items-center gap-2"><span className="inline-flex items-center gap-1 text-xs text-slate-500"><Monitor className="h-3.5 w-3.5" />{c.telas}</span><SeloVencimento c={c} hoje={hoje} /></div>
         </div>

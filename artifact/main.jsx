@@ -83,8 +83,8 @@ function EntrarDemo({ como }) {
 function Celular({ msgs, aberto, setAberto }) {
   return (
     <>
-      <button onClick={() => setAberto(!aberto)} className="fixed bottom-4 right-4 z-[70] inline-flex h-12 items-center gap-2 rounded-full bg-emerald-500 px-4 font-semibold text-white shadow-2xl hover:bg-emerald-600" aria-expanded={aberto}>
-        <MessageCircle className="h-5 w-5" />WhatsApp simulado{msgs.length > 0 && <span className="rounded-full bg-white px-2 text-xs font-bold text-emerald-700">{msgs.length}</span>}
+      <button data-demo-flutuante onClick={() => setAberto(!aberto)} aria-label="WhatsApp simulado" className="fixed bottom-4 right-4 z-[70] inline-flex h-12 items-center gap-2 rounded-full bg-emerald-500 px-3.5 font-semibold sm:px-4 text-white shadow-2xl hover:bg-emerald-600" aria-expanded={aberto}>
+        <MessageCircle className="h-5 w-5" /><span className="hidden sm:inline [@media(max-height:500px)]:!hidden">WhatsApp simulado</span>{msgs.length > 0 && <span className="rounded-full bg-white px-2 text-xs font-bold text-emerald-700">{msgs.length}</span>}
       </button>
       {aberto && (
         <div className="fixed bottom-20 right-4 z-[70] flex max-h-[70vh] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl bg-[#0B141A] shadow-2xl ring-1 ring-black/20">
@@ -149,7 +149,7 @@ function App() {
   return (
     <RotaCtx.Provider value={ctx}>
       {tela}
-      <div className="fixed bottom-5 right-[250px] z-[70] hidden items-center gap-2 rounded-full bg-amber-400 px-3 py-2 text-xs font-bold text-amber-950 shadow-lg sm:inline-flex">
+      <div data-demo-flutuante className="fixed bottom-5 right-[250px] z-[70] hidden items-center gap-2 rounded-full bg-amber-400 px-3 py-2 text-xs font-bold text-amber-950 shadow-lg sm:inline-flex [@media(max-height:500px)]:!hidden">
         <FlaskConical className="h-3.5 w-3.5" />Demonstração · dados simulados
         <button onClick={() => location.reload()} title="Apaga tudo e recomeça com os dados de exemplo" className="inline-flex items-center gap-1 rounded-full bg-amber-950/10 px-2 py-0.5 hover:bg-amber-950/20"><RotateCcw className="h-3 w-3" />Recomeçar</button>
       </div>

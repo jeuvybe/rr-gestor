@@ -166,7 +166,7 @@ export default function Clientes() {
   );
   const Toggle = ({ c }) => (
     <button role="switch" aria-checked={c.status !== 'desativado'} title={c.status === 'desativado' ? 'Reativar cliente' : 'Desativar cliente'} onClick={() => alternarStatus(c)}
-      className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition ${c.status !== 'desativado' ? 'bg-brand-cyan' : 'bg-slate-300 dark:bg-night-line'}`}>
+      className={`alvo h-5 w-9 shrink-0 rounded-full p-0.5 transition ${c.status !== 'desativado' ? 'bg-brand-cyan' : 'bg-slate-300 dark:bg-night-line'}`}>
       <span className={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${c.status !== 'desativado' ? 'translate-x-4' : ''}`} />
     </button>
   );
@@ -215,8 +215,8 @@ export default function Clientes() {
             <span className="mr-1 text-xs font-semibold text-slate-500">Servidores:</span>
             {servidores.map((s) => (
               <button key={s.id} onClick={() => setServFiltro(servFiltro === s.id ? '' : s.id)} style={{ background: s.cor }}
-                className={`inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-bold text-white shadow-sm transition [text-shadow:0_1px_1px_rgba(0,0,0,.35)] ${servFiltro && servFiltro !== s.id ? 'opacity-35' : ''} ${servFiltro === s.id ? 'ring-2 ring-offset-2 ring-brand-cyan dark:ring-offset-night-card' : ''}`}>
-                {s.nome}<span className="rounded bg-black/20 px-1 text-[10px]">{contServ[s.id] || 0}</span>
+                className={`inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-bold text-white touch:h-10 touch:px-3 shadow-sm transition [text-shadow:0_1px_1px_rgba(0,0,0,.35)] ${servFiltro && servFiltro !== s.id ? 'opacity-35' : ''} ${servFiltro === s.id ? 'ring-2 ring-offset-2 ring-brand-cyan dark:ring-offset-night-card' : ''}`}>
+                {s.nome}<span className="rounded bg-black/20 px-1 text-[11px] tabular-nums">{contServ[s.id] || 0}</span>
               </button>
             ))}
             {contServ._ > 0 && <button onClick={() => setServFiltro(servFiltro === '_' ? '' : '_')} className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs font-semibold text-slate-500 dark:border-night-line ${servFiltro === '_' ? 'ring-2 ring-brand-cyan' : ''}`}>Sem servidor<span className="text-[10px]">{contServ._}</span></button>}
@@ -229,9 +229,9 @@ export default function Clientes() {
           </Vazio>
         ) : (
           <>
-            <ul className="divide-y divide-line border-t border-line md:hidden dark:divide-night-line dark:border-night-line">
+            <ul className="border-t border-line md:grid md:grid-cols-2 xl:hidden dark:border-night-line">
               {pagina.map((c) => (
-                <li key={c.id} className={`px-4 py-3 ${c.status === 'desativado' ? 'opacity-60' : ''}`}>
+                <li key={c.id} className={`border-b border-line px-4 py-3 md:odd:border-r dark:border-night-line ${c.status === 'desativado' ? 'opacity-60' : ''}`}>
                   <div className="flex items-start gap-2.5">
                     <div className="pt-1"><Toggle c={c} /></div>
                     <div className="min-w-0 flex-1">
@@ -247,7 +247,7 @@ export default function Clientes() {
                 </li>
               ))}
             </ul>
-            <div className="hidden overflow-x-auto md:block">
+            <div className="hidden overflow-x-auto xl:block">
               <table className="w-full min-w-[960px] text-sm">
                 <thead>
                   <tr className="bg-brand-navy text-left text-xs font-semibold text-white dark:bg-[#0F2A4D]">

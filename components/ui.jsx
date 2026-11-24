@@ -54,13 +54,13 @@ export function Modal({ titulo, sub, aberto, onFechar, children, rodape, largura
   if (!aberto) return null;
   return (
     <div className="no-print fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-brand-navy/50 p-0 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onFechar()}>
-      <div role="dialog" aria-modal="true" className={`w-full ${largura} rounded-t-2xl border border-line bg-white shadow-2xl sm:rounded-2xl dark:border-night-line dark:bg-night-card`}>
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 dark:border-night-line">
+      <div role="dialog" aria-modal="true" className={`flex max-h-[100dvh] w-full flex-col ${largura} rounded-t-2xl border border-line bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl dark:border-night-line dark:bg-night-card`}>
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-5 sm:py-4 dark:border-night-line">
           <div><h2 className="font-display text-lg font-bold">{titulo}</h2>{sub && <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{sub}</p>}</div>
           <button onClick={onFechar} aria-label="Fechar" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg hover:bg-slate-100 dark:hover:bg-night-soft"><X className="h-5 w-5" /></button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
-        {rodape && <div className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3 dark:border-night-line">{rodape}</div>}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">{children}</div>
+        {rodape && <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-line px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 dark:border-night-line">{rodape}</div>}
       </div>
     </div>
   );
@@ -144,7 +144,7 @@ export function Interruptor({ ligado, onChange, rotulo, desc }) {
   return (
     <label className="flex cursor-pointer items-start gap-3">
       <button type="button" role="switch" aria-checked={ligado} onClick={() => onChange(!ligado)}
-        className={`mt-0.5 h-6 w-11 shrink-0 rounded-full p-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan ${ligado ? 'bg-brand-cyan' : 'bg-slate-300 dark:bg-night-line'}`}>
+        className={`alvo mt-0.5 h-6 w-11 shrink-0 rounded-full p-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan ${ligado ? 'bg-brand-cyan' : 'bg-slate-300 dark:bg-night-line'}`}>
         <span className={`block h-5 w-5 rounded-full bg-white shadow transition-transform ${ligado ? 'translate-x-5' : ''}`} />
       </button>
       <span><span className="block text-sm font-semibold">{rotulo}</span>{desc && <span className="block text-xs text-slate-500 dark:text-slate-400">{desc}</span>}</span>

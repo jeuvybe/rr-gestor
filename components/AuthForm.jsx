@@ -124,7 +124,7 @@ export default function AuthForm({ modo }) {
             <Campo rotulo="E-mail" type="email" value={f.email} onChange={set('email')} autoComplete="email" required />
             <Campo rotulo="Senha" type="password" value={f.senha} onChange={set('senha')} autoComplete={cadastro ? 'new-password' : 'current-password'} required minLength={6} />
             {cadastro && <Campo rotulo="Confirme a senha" type="password" value={f.senha2} onChange={set('senha2')} autoComplete="new-password" required />}
-            {!cadastro && <div className="text-right"><Link href="/recuperar-senha" className="text-sm font-semibold text-[#007F98] dark:text-brand-cyan">Esqueci a senha</Link></div>}
+            {!cadastro && <div className="text-right"><Link href="/recuperar-senha" className="inline-block text-sm font-semibold touch:py-2.5 text-[#007F98] dark:text-brand-cyan">Esqueci a senha</Link></div>}
           </>
         ) : (
           <Campo rotulo="Celular com DDD" ajuda="O código chega no seu WhatsApp.">
@@ -142,7 +142,7 @@ export default function AuthForm({ modo }) {
       </Btn>
       <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
         {cadastro ? 'Já tem conta? ' : 'Ainda não tem conta? '}
-        <Link href={cadastro ? '/login' : '/cadastro'} className="font-semibold text-[#007F98] dark:text-brand-cyan">{cadastro ? 'Entrar' : 'Criar conta grátis'}</Link>
+        <Link href={cadastro ? '/login' : '/cadastro'} className="inline-block font-semibold touch:py-2.5 text-[#007F98] dark:text-brand-cyan">{cadastro ? 'Entrar' : 'Criar conta grátis'}</Link>
       </p>
     </form>
   );

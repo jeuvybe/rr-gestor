@@ -90,7 +90,7 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
   return (
     <ToastProvider>
       <Ctx.Provider value={{ perfil, uso, recarregar, area }}>
-        <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-[248px] lg:block">{lateral}</aside>
+        <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-[15.5rem] lg:block">{lateral}</aside>
         {aberto && (
           <div className="no-print fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-brand-navy/60 backdrop-blur-sm" onClick={() => setAberto(false)} />
@@ -98,22 +98,22 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
             <button onClick={() => setAberto(false)} aria-label="Fechar menu" className="absolute left-[272px] top-4 grid h-10 w-10 place-items-center rounded-full bg-white text-brand-navy"><X className="h-5 w-5" /></button>
           </div>
         )}
-        <div className="print-full lg:pl-[248px]">
+        <div className="print-full lg:pl-[15.5rem]">
           <header data-app className="no-print sticky top-0 z-20 border-b border-line bg-white/85 backdrop-blur transition-colors dark:border-night-line dark:bg-night-card/80">
-            <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-3 px-4 sm:px-6">
+            <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-2 px-3 sm:gap-3 sm:px-6 min-[1920px]:max-w-[105rem]">
               <button onClick={() => setAberto(true)} aria-label="Abrir menu" className="grid h-10 w-10 place-items-center rounded-lg border border-line lg:hidden dark:border-night-line"><Menu className="h-5 w-5" /></button>
               <div className="min-w-0 flex-1">
                 <div className="truncate font-display text-[15px] font-bold">{perfil.empresa || nome}</div>
                 <div className="truncate text-xs text-slate-500 dark:text-slate-400">{area === 'admin' ? 'Painel administrador' : 'Painel de gestão'}</div>
               </div>
               <BotaoTema />
-              <button onClick={sair} className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-brand-navy dark:hover:bg-night-soft dark:hover:text-white"><LogOut className="h-4 w-4" /><span className="hidden sm:inline">Sair</span></button>
+              <button onClick={sair} aria-label="Sair" className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-brand-navy dark:hover:bg-night-soft dark:hover:text-white"><LogOut className="h-4 w-4" /><span className="hidden sm:inline">Sair</span></button>
             </div>
           </header>
           {area === 'painel' && uso?.vencido && (
             <Aviso tom="ambar" I={AlertTriangle}>Seu plano pago venceu em {fmtData(uso.expira_em)}. Até a renovação, vale o limite do plano {uso.plano_nome} ({uso.limite ?? '∞'} clientes). <Link href="/painel/conta" className="font-semibold underline">Renovar</Link></Aviso>
           )}
-          <main className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6">{children}</main>
+          <main className="mx-auto max-w-[90rem] px-3 py-5 sm:px-6 min-[1920px]:max-w-[105rem]">{children}</main>
         </div>
       </Ctx.Provider>
     </ToastProvider>

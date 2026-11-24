@@ -73,7 +73,7 @@ export default function ModelosMensagem({ sb, perfil }) {
               <Selecao rotulo="Tipo" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} opcoes={TIPOS} />
             </div>
             <Campo rotulo="Texto *"><textarea id="txt-modelo" value={form.texto} onChange={(e) => setForm({ ...form, texto: e.target.value })} rows={8} className="campo h-auto py-2" required /></Campo>
-            <div className="flex flex-wrap gap-1">{VARIAVEIS.map(([v, d]) => <button type="button" key={v} title={d} onClick={() => inserir(v)} className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 hover:bg-brand-cyan/15 dark:bg-night-soft dark:text-slate-300">{v}</button>)}</div>
+            <div className="flex flex-wrap gap-1 touch:gap-1.5">{VARIAVEIS.map(([v, d]) => <button type="button" key={v} title={d} onClick={() => inserir(v)} className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 hover:bg-brand-cyan/15 touch:px-2.5 touch:py-2 touch:text-xs dark:bg-night-soft dark:text-slate-300">{v}</button>)}</div>
             <Interruptor ligado={form.fast} onChange={(v) => setForm({ ...form, fast: v })} rotulo="Marcar como FAST" desc="O botão FAST da lista de clientes envia este modelo na hora. Só um modelo pode ser FAST." />
             <div className="rounded-xl bg-[#E7F8EE] p-3 text-[13px] leading-snug text-[#1F2C34] dark:bg-[#0B3B2E] dark:text-emerald-50">
               <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-60">Pré-visualização</div>

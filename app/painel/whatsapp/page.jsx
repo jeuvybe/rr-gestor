@@ -81,7 +81,7 @@ export default function WhatsApp() {
                   <Interruptor ligado={m.ativo} onChange={(v) => muda(m.id, 'ativo', v)} rotulo="" />
                 </div>
                 <textarea id={`txt-${m.id}`} value={m.texto} onChange={(e) => muda(m.id, 'texto', e.target.value)} onFocus={() => setFoco({ ...foco, [m.id]: true })} rows={8} className="campo mt-3 h-auto py-2 text-sm" />
-                <div className="mt-2 flex flex-wrap gap-1">{VARIAVEIS.map(([v, d]) => <button key={v} type="button" title={d} onClick={() => inserir(m, v)} className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 hover:bg-brand-cyan/15 dark:bg-night-soft dark:text-slate-300">{v}</button>)}</div>
+                <div className="mt-2 flex flex-wrap gap-1 touch:gap-1.5">{VARIAVEIS.map(([v, d]) => <button key={v} type="button" title={d} onClick={() => inserir(m, v)} className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 hover:bg-brand-cyan/15 touch:px-2.5 touch:py-2 touch:text-xs dark:bg-night-soft dark:text-slate-300">{v}</button>)}</div>
                 <div className="mt-3 rounded-xl bg-[#E7F8EE] p-3 text-[13px] leading-snug text-[#1F2C34] dark:bg-[#0B3B2E] dark:text-emerald-50">
                   <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-60">Pré-visualização</div>
                   <div className="whitespace-pre-wrap">{montaMensagem(m.texto, { cliente: { ...exemplo, vencimento: venc }, plano: { nome: 'Mensal' }, perfil, hoje })}</div>
@@ -99,15 +99,15 @@ export default function WhatsApp() {
         <div className="p-4"><h2 className="font-display text-base font-semibold">Histórico de envios</h2><p className="text-xs text-slate-500">Últimas 60 mensagens</p></div>
         {!logs ? null : !logs.length ? <Vazio msg="Nenhuma mensagem enviada ainda." /> : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
-              <thead><tr className="border-y border-line bg-slate-50 text-left text-xs font-semibold text-slate-500 dark:border-night-line dark:bg-night-soft/60"><th className="px-4 py-2.5">Quando</th><th className="px-4 py-2.5">Cliente</th><th className="px-4 py-2.5">Tipo</th><th className="px-4 py-2.5">Mensagem</th><th className="px-4 py-2.5">Status</th></tr></thead>
+            <table className="w-full text-sm lg:min-w-[720px]">
+              <thead><tr className="border-y border-line bg-slate-50 text-left text-xs font-semibold text-slate-500 dark:border-night-line dark:bg-night-soft/60"><th className="px-4 py-2.5">Quando</th><th className="px-4 py-2.5">Cliente</th><th className="hidden px-4 py-2.5 sm:table-cell">Tipo</th><th className="hidden px-4 py-2.5 md:table-cell">Mensagem</th><th className="px-4 py-2.5">Status</th></tr></thead>
               <tbody className="divide-y divide-line dark:divide-night-line">
                 {logs.map((l) => (
                   <tr key={l.id}>
-                    <td className="whitespace-nowrap px-4 py-2.5 tabular-nums">{new Date(l.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                    <td className="whitespace-nowrap px-3 py-2.5 tabular-nums sm:px-4">{new Date(l.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
                     <td className="px-4 py-2.5">{nomes.get(l.customer_id) || fmtTelefone(l.telefone)}</td>
-                    <td className="px-4 py-2.5">{GATILHOS[l.gatilho]?.curto || { manual: 'Manual', modelo: 'Modelo', recibo: 'Recibo', teste: 'Teste' }[l.gatilho]}</td>
-                    <td className="max-w-[360px] truncate px-4 py-2.5 text-slate-500" title={l.texto}>{l.texto}</td>
+                    <td className="hidden px-4 py-2.5 sm:table-cell">{GATILHOS[l.gatilho]?.curto || { manual: 'Manual', modelo: 'Modelo', recibo: 'Recibo', teste: 'Teste' }[l.gatilho]}</td>
+                    <td className="hidden max-w-[360px] truncate px-4 py-2.5 text-slate-500 md:table-cell" title={l.texto}>{l.texto}</td>
                     <td className="px-4 py-2.5">{l.status === 'enviado' ? <Badge tom="verde">Enviado</Badge> : <Badge tom="vermelho" >Erro</Badge>}{l.erro && <div className="max-w-[200px] truncate text-xs text-rose-600" title={l.erro}>{l.erro}</div>}</td>
                   </tr>
                 ))}

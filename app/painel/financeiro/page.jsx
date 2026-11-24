@@ -101,8 +101,30 @@ export default function Financeiro() {
             {[['', 'Todos'], ['ganho', 'Ganhos'], ['gasto', 'Gastos']].map(([k, r]) => <button key={k} onClick={() => setTipo(k)} className={`h-9 rounded-md px-3 ${tipo === k ? 'bg-brand-navy text-white dark:bg-brand-cyan dark:text-brand-navy' : 'text-slate-500'}`}>{r}</button>)}
           </div>
         </div>
-        {!movs ? <Carregando /> : !lista.length ? <Vazio msg="Nenhuma movimentação neste mês." /> : (
-          <div className="overflow-x-auto">
+        {!movs ? <Carregando /> : !lista.length ? <Vazio msg="Nenhuma movimentação neste mês." /> : (<>
+          <ul className="border-t border-line md:grid md:grid-cols-2 xl:hidden dark:border-night-line">
+            {lista.map((m) => (
+              <li key={m.id} className="flex items-start gap-3 border-b border-line px-4 py-3 md:odd:border-r dark:border-night-line">
+                <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg ${m.tipo === 'ganho' ? 'bg-brand-cyan/10 text-[#0095B0] dark:text-brand-cyan' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>{m.tipo === 'ganho' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="min-w-0 break-words font-medium">{m.descricao || m.categoria}</span>
+                    <span className={`shrink-0 whitespace-nowrap font-semibold tabular-nums ${m.tipo === 'gasto' ? 'text-rose-600 dark:text-rose-400' : ''}`}>{m.tipo === 'gasto' ? '−' : '+'}{brl(m.valor)}</span>
+                  </div>
+                  {m.customer_id && <div className="truncate text-xs text-slate-500">{cliNome.get(m.customer_id)}</div>}
+                  <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{fmtData(m.data)} · {m.categoria} · {m.forma}</div>
+                  <div className="mt-1.5 flex items-center justify-between gap-2">
+                    <Badge tom={TOM[m.status]}>{STATUS.find((s) => s[0] === m.status)?.[1]}</Badge>
+                    <div className="flex gap-1">
+                      <button title="Editar" aria-label="Editar" onClick={() => setForm({ ...m, descricao: m.descricao || '', valor: String(m.valor).replace('.', ','), customer_id: m.customer_id || '' })} className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-night-soft"><Pencil className="h-4 w-4" /></button>
+                      <button title="Excluir" aria-label="Excluir" onClick={() => setExcluir(m)} className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto xl:block">
             <table className="w-full min-w-[760px] text-sm">
               <thead><tr className="border-y border-line bg-slate-50 text-left text-xs font-semibold text-slate-500 dark:border-night-line dark:bg-night-soft/60 dark:text-slate-400">
                 <th className="px-4 py-2.5">Data</th><th className="px-4 py-2.5">Descrição</th><th className="px-4 py-2.5">Categoria</th><th className="px-4 py-2.5">Forma</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Valor</th><th className="w-24" />
@@ -125,7 +147,7 @@ export default function Financeiro() {
               </tbody>
             </table>
           </div>
-        )}
+        </>)}
         {movs && lista.length > 0 && <div className="border-t border-line px-4 py-3 text-sm text-slate-500 dark:border-night-line">{int(lista.length)} lançamentos</div>}
       </div>
 

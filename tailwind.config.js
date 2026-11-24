@@ -2,6 +2,10 @@
 module.exports = {
   content: ['./app/**/*.{js,jsx}', './components/**/*.{js,jsx}'],
   darkMode: 'class',
+  plugins: [
+    // touch: estilos só para telas de toque (celular e tablet), em qualquer largura
+    ({ addVariant }) => addVariant('touch', '@media (pointer: coarse)'),
+  ],
   theme: {
     extend: {
       colors: {

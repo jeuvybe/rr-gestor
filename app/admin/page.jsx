@@ -78,12 +78,29 @@ export default function Admin() {
   }
   const planoMap = new Map(planos.map((p) => [p.id, p]));
 
+  const Chave = ({ c }) => (
+    <button role="switch" aria-checked={c.status !== 'bloqueado'} disabled={c.id === eu.id} onClick={() => alternarConta(c)}
+                            title={c.id === eu.id ? 'Sua conta' : c.status === 'bloqueado' ? 'Ativar conta' : 'Desativar conta'} aria-label={`${c.status === 'bloqueado' ? 'Ativar' : 'Desativar'} ${c.empresa || c.nome || 'conta'}`}
+                            className={`alvo h-5 w-9 shrink-0 rounded-full p-0.5 transition disabled:opacity-40 ${c.status !== 'bloqueado' ? 'bg-brand-cyan' : 'bg-slate-300 dark:bg-night-line'}`}>
+                            <span className={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${c.status !== 'bloqueado' ? 'translate-x-4' : ''}`} />
+                          </button>
+  );
+  const Acoes = ({ c }) => {
+    const tel = (c.telefone || '').replace(/\D/g, '');
+    return (<>
+      <Ic t="Registrar pagamento" onClick={() => { const atual = planoMap.get(c.plan_id); const p = atual?.preco > 0 ? atual : planos.find((x) => x.preco > 0); setPag({ c, plan_id: p?.id || '', meses: 1, valor: String(p?.preco || 0).replace('.', ','), obs: '' }); }}><BadgeCheck className="h-4 w-4 text-emerald-600" /></Ic>
+                        <Ic t="Editar conta" onClick={() => setEdit({ ...c, plan_id: c.plan_id || '', plano_expira_em: c.plano_expira_em || '' })}><Pencil className="h-4 w-4" /></Ic>
+                        {tel && <a href={`https://wa.me/${tel}`} target="_blank" rel="noreferrer" title="Abrir conversa no WhatsApp" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-night-soft"><MessageCircle className="h-4 w-4" /></a>}
+    </>);
+  };
+  const Validade = ({ c }) => (c.plano_expira_em ? <span className={c.plano_expira_em < hoje ? 'font-semibold text-rose-600' : ''}>{fmtData(c.plano_expira_em)}</span> : <span className="text-slate-400">sem vencimento</span>);
+
   if (!contas) return <Carregando />;
   return (
     <>
       <Titulo titulo="Assinantes" sub="Contas que usam o sistema, planos e liberação de pagamentos." />
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[[Users, 'Assinantes', int(k.total), `${int(k.novos30)} ${k.novos30 === 1 ? 'novo' : 'novos'} em 30 dias`], [Wallet, 'Receita mensal (planos pagos em dia)', brl(k.mrr), `${int(k.pagos)} ${k.pagos === 1 ? 'conta pagante' : 'contas pagantes'}`],
+      <div className="mb-5 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 lg:grid-cols-4">
+        {[[Users, 'Assinantes', int(k.total), `${int(k.novos30)} ${k.novos30 === 1 ? 'novo' : 'novos'} em 30 dias`], [Wallet, 'Receita mensal', brl(k.mrr), `${int(k.pagos)} ${k.pagos === 1 ? 'conta pagante em dia' : 'contas pagantes em dia'}`],
           [CalendarClock, 'Vencem em 7 dias', int(k.vencendo), `${int(k.vencidos)} ${k.vencidos === 1 ? 'já vencida' : 'já vencidas'}`], [Smartphone, 'WhatsApp conectado', int(k.wa), `${int(k.bloqueados)} ${k.bloqueados === 1 ? 'conta desativada' : 'contas desativadas'}`]].map(([I, r, v, s]) => (
           <div key={r} className="card p-4">
             <div className="flex items-center justify-between gap-2 text-sm text-slate-500 dark:text-slate-400"><span>{r}</span><I className="h-4 w-4 text-brand-cyan" /></div>
@@ -97,10 +114,33 @@ export default function Admin() {
       <div className="card overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 p-3">
           <label className="relative min-w-[220px] flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nome, empresa, e-mail ou telefone" className="campo pl-9" /></label>
-          <Selecao value={filtro} onChange={(e) => setFiltro(e.target.value)} todos="Todas as contas" opcoes={[['pagos', 'Pagantes em dia'], ['vencendo', 'Vencem em 7 dias'], ['vencidos', 'Plano vencido'], ['limite', 'No limite de clientes'], ['ativas', 'Ativas'], ['bloqueados', 'Desativadas']]} className="w-56" />
+          <Selecao value={filtro} onChange={(e) => setFiltro(e.target.value)} todos="Todas as contas" opcoes={[['pagos', 'Pagantes em dia'], ['vencendo', 'Vencem em 7 dias'], ['vencidos', 'Plano vencido'], ['limite', 'No limite de clientes'], ['ativas', 'Ativas'], ['bloqueados', 'Desativadas']]} className="w-full sm:w-56" />
         </div>
-        {!lista.length ? <Vazio msg="Nenhuma conta encontrada." /> : (
-          <div className="overflow-x-auto">
+        {!lista.length ? <Vazio msg="Nenhuma conta encontrada." /> : (<>
+          <ul className="border-t border-line md:grid md:grid-cols-2 xl:hidden dark:border-night-line">
+            {lista.map((c) => {
+              const lim = c.limite != null && c.clientes >= c.limite;
+              return (
+                <li key={c.id} className={`border-b border-line p-4 md:odd:border-r dark:border-night-line ${c.status === 'bloqueado' ? 'opacity-60' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="pt-1"><Chave c={c} /></div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 font-semibold">{c.empresa || c.nome || '—'}{c.is_admin && <Badge tom="ciano">admin</Badge>}{c.status === 'bloqueado' && <Badge tom="vermelho">desativada</Badge>}</div>
+                      <div className="break-words text-xs text-slate-500">{[c.nome !== c.empresa && c.nome, c.email, c.telefone && fmtTelefone(c.telefone)].filter(Boolean).join(' · ')}</div>
+                    </div>
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                    <div><dt className="text-xs text-slate-500">Plano</dt><dd className="font-medium">{c.plano_efetivo_nome}{c.plano_nome !== c.plano_efetivo_nome && <span className="block text-xs text-amber-600">contratado: {c.plano_nome}</span>}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Clientes</dt><dd className={`tabular-nums ${lim ? 'font-semibold text-amber-600' : ''}`}>{int(c.clientes)}{c.limite != null ? ` / ${int(c.limite)}` : ''}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Validade</dt><dd className="tabular-nums"><Validade c={c} /></dd></div>
+                    <div><dt className="text-xs text-slate-500">WhatsApp</dt><dd>{c.whatsapp === 'conectado' ? <Badge tom="verde">conectado</Badge> : <Badge>desconectado</Badge>}</dd></div>
+                  </dl>
+                  <div className="mt-2 flex items-center justify-between gap-2"><span className="text-xs text-slate-500">desde {fmtData(hojeBR(new Date(c.created_at)))}</span><div className="flex gap-1"><Acoes c={c} /></div></div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto xl:block">
             <table className="w-full min-w-[960px] text-sm">
               <thead><tr className="border-y border-line bg-slate-50 text-left text-xs font-semibold text-slate-500 dark:border-night-line dark:bg-night-soft/60">
                 <th className="px-4 py-2.5">Conta</th><th className="px-4 py-2.5">Plano</th><th className="px-4 py-2.5">Clientes</th><th className="px-4 py-2.5">Validade</th><th className="px-4 py-2.5">WhatsApp</th><th className="px-4 py-2.5">Desde</th><th className="px-4 py-2.5 text-right">Ações</th>
@@ -108,16 +148,11 @@ export default function Admin() {
               <tbody className="divide-y divide-line dark:divide-night-line">
                 {lista.map((c) => {
                   const venc = c.plano_expira_em && c.plano_expira_em < hoje; const lim = c.limite != null && c.clientes >= c.limite;
-                  const tel = (c.telefone || '').replace(/\D/g, '');
                   return (
                     <tr key={c.id} className={`hover:bg-slate-50 dark:hover:bg-night-soft/50 ${c.status === 'bloqueado' ? 'opacity-60' : ''}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <button role="switch" aria-checked={c.status !== 'bloqueado'} disabled={c.id === eu.id} onClick={() => alternarConta(c)}
-                            title={c.id === eu.id ? 'Sua conta' : c.status === 'bloqueado' ? 'Ativar conta' : 'Desativar conta'} aria-label={`${c.status === 'bloqueado' ? 'Ativar' : 'Desativar'} ${c.empresa || c.nome || 'conta'}`}
-                            className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition disabled:opacity-40 ${c.status !== 'bloqueado' ? 'bg-brand-cyan' : 'bg-slate-300 dark:bg-night-line'}`}>
-                            <span className={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${c.status !== 'bloqueado' ? 'translate-x-4' : ''}`} />
-                          </button>
+                          <Chave c={c} />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 font-semibold">{c.empresa || c.nome || '—'}{c.is_admin && <Badge tom="ciano">admin</Badge>}{c.status === 'bloqueado' && <Badge tom="vermelho">desativada</Badge>}</div>
                             <div className="text-xs text-slate-500">{[c.nome !== c.empresa && c.nome, c.email, c.telefone && fmtTelefone(c.telefone)].filter(Boolean).join(' · ')}</div>
@@ -130,9 +165,7 @@ export default function Admin() {
                       <td className="px-4 py-3">{c.whatsapp === 'conectado' ? <Badge tom="verde">conectado</Badge> : <Badge>desconectado</Badge>}</td>
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums text-slate-500">{fmtData(hojeBR(new Date(c.created_at)))}</td>
                       <td className="px-4 py-3"><div className="flex justify-end gap-1">
-                        <Ic t="Registrar pagamento" onClick={() => { const atual = planoMap.get(c.plan_id); const p = atual?.preco > 0 ? atual : planos.find((x) => x.preco > 0); setPag({ c, plan_id: p?.id || '', meses: 1, valor: String(p?.preco || 0).replace('.', ','), obs: '' }); }}><BadgeCheck className="h-4 w-4 text-emerald-600" /></Ic>
-                        <Ic t="Editar conta" onClick={() => setEdit({ ...c, plan_id: c.plan_id || '', plano_expira_em: c.plano_expira_em || '' })}><Pencil className="h-4 w-4" /></Ic>
-                        {tel && <a href={`https://wa.me/${tel}`} target="_blank" rel="noreferrer" title="Abrir conversa no WhatsApp" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-night-soft"><MessageCircle className="h-4 w-4" /></a>}
+                        <Acoes c={c} />
                       </div></td>
                     </tr>
                   );
@@ -140,7 +173,7 @@ export default function Admin() {
               </tbody>
             </table>
           </div>
-        )}
+        </>)}
       </div>
 
       <Modal aberto={!!pag} onFechar={() => setPag(null)} titulo="Registrar pagamento da assinatura" sub={pag && (pag.c.empresa || pag.c.nome || pag.c.email)}

@@ -4,7 +4,7 @@ export const metadata = {
   title: { default: 'RR Gestor — clientes e cobranças pelo WhatsApp', template: '%s · RR Gestor' },
   description: 'Cadastre seus clientes, controle o financeiro e envie cobranças automáticas pelo WhatsApp.',
 };
-export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A1F3A' };
+export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#0A1F3A' };
 
 const temaInicial = `try{var t=localStorage.getItem('rr-tema');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(t==='dark')document.documentElement.classList.add('dark')}catch(e){}`;
 

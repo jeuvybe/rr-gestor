@@ -60,7 +60,7 @@ export default function Servidores() {
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white" style={{ background: s.cor }}><Server className="h-5 w-5" /></span>
               <div className="min-w-0 flex-1">
                 <div className="truncate font-display font-bold">{s.nome}</div>
-                <Link href={`/painel/clientes`} className="text-xs text-slate-500 hover:underline">{int(uso[s.id]?.a || 0)} ativos · {int(uso[s.id]?.t || 0)} no total</Link>
+                <Link href={`/painel/clientes`} className="inline-block text-xs text-slate-500 hover:underline touch:py-2.5">{int(uso[s.id]?.a || 0)} ativos · {int(uso[s.id]?.t || 0)} no total</Link>
               </div>
               <button aria-label="Editar" title="Editar" onClick={() => setForm({ ...s })} className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-night-soft"><Pencil className="h-4 w-4" /></button>
               <button aria-label="Excluir" title="Excluir" onClick={() => setExcluir(s)} className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"><Trash2 className="h-4 w-4" /></button>

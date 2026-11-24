@@ -28,11 +28,11 @@ export default async function Home() {
   const lista = await planos();
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-[1200px] items-center gap-3 px-5 py-5">
-        <Link href="/" className="flex flex-1 items-center gap-2.5"><Logo className="h-7 w-9" /><span className="font-display text-lg font-bold">RR Gestor</span></Link>
+      <header className="mx-auto flex max-w-[1200px] items-center gap-2 px-4 py-4 sm:gap-3 sm:px-5 sm:py-5">
+        <Link href="/" className="flex flex-1 items-center gap-2.5"><Logo className="h-7 w-9" /><span className="whitespace-nowrap font-display text-lg font-bold max-[359px]:sr-only">RR Gestor</span></Link>
         <BotaoTema />
         <Link href="/login" className="hidden h-10 items-center rounded-lg px-3 text-sm font-semibold sm:inline-flex">Entrar</Link>
-        <Link href="/cadastro" className="inline-flex h-10 items-center rounded-lg bg-brand-cyan px-4 text-sm font-semibold text-brand-navy">Teste grátis</Link>
+        <Link href="/cadastro" className="inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-brand-cyan px-3.5 text-sm font-semibold text-brand-navy sm:px-4">Teste grátis</Link>
       </header>
 
       <section className="bg-brand-navy text-white">
@@ -49,8 +49,8 @@ export default async function Home() {
             <div className="rounded-[28px] bg-[#0B141A] p-3 shadow-2xl ring-1 ring-white/10">
               <div className="rounded-2xl bg-[#ECE5DD] p-4 text-[14px] leading-snug text-[#111B21]">
                 <div className="mb-3 text-center text-[11px] text-slate-500">hoje</div>
-                <div className="ml-auto max-w-[85%] rounded-xl rounded-tr-sm bg-[#D9FDD3] px-3 py-2 shadow-sm">Olá, Maria! 👋 Sua mensalidade de <b>R$ 99,90</b> vence em 3 dias (26/11).<br /><br />Chave Pix: pix@suaempresa.com<div className="mt-1 text-right text-[10px] text-slate-500">09:00 ✓✓</div></div>
-                <div className="mt-2 max-w-[70%] rounded-xl rounded-tl-sm bg-white px-3 py-2 shadow-sm">Pago! Segue o comprovante 🙏<div className="mt-1 text-right text-[10px] text-slate-500">09:12</div></div>
+                <div className="ml-auto max-w-[85%] rounded-xl rounded-tr-sm bg-[#D9FDD3] px-3 py-2 shadow-sm">Olá, Maria! 👋 Sua mensalidade de <b>R$ 99,90</b> vence em 3 dias (26/11).<br /><br />Chave Pix: pix@suaempresa.com<div className="mt-1 text-right text-[11px] text-slate-500">09:00 ✓✓</div></div>
+                <div className="mt-2 max-w-[70%] rounded-xl rounded-tl-sm bg-white px-3 py-2 shadow-sm">Pago! Segue o comprovante 🙏<div className="mt-1 text-right text-[11px] text-slate-500">09:12</div></div>
               </div>
             </div>
           </div>
