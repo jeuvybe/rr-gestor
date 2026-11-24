@@ -21,8 +21,8 @@ export default function Conta() {
   useEffect(() => {
     sb.from('plans').select('*').eq('ativo', true).order('ordem').then(({ data }) => setPlanos(data || []));
     sb.from('app_settings').select('*').single().then(({ data }) => setCfg(data));
-    sb.from('subscription_payments').select('*, plans(nome)').order('pago_em', { ascending: false }).then(({ data }) => setHist(data || []));
-  }, [sb]);
+    sb.from('subscription_payments').select('*, plans(nome)').eq('profile_id', perfil.id).order('pago_em', { ascending: false }).then(({ data }) => setHist(data || []));
+  }, [sb, perfil.id]);
 
   async function salvar(e) {
     e.preventDefault(); setSalvando('perfil');

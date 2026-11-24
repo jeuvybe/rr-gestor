@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Search, FileSpreadsheet } from 'lucide-react';
-import { Titulo } from '@/components/AppShell';
+import { usePainel, Titulo } from '@/components/AppShell';
 import { Btn, Campo, Selecao, Modal, Badge, Vazio, Carregando, useToast } from '@/components/ui';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { buscarTudo } from '@/lib/dados';
@@ -17,6 +17,7 @@ const TOM = { confirmado: 'verde', pendente: 'ambar', recusado: 'vermelho' };
 export default function Financeiro() {
   const sb = supabaseBrowser();
   const toast = useToast();
+  const { perfil } = usePainel();
   const hoje = hojeBR();
   const [mes, setMes] = useState(monthStart(hoje));
   const [movs, setMovs] = useState(null);
@@ -31,12 +32,12 @@ export default function Financeiro() {
     setMovs(null);
     try {
       const [m, c] = await Promise.all([
-        buscarTudo(() => sb.from('transactions').select('*').gte('data', mes).lte('data', monthEnd(mes)).order('data', { ascending: false }).order('created_at', { ascending: false })),
-        sb.from('customers').select('id, nome').order('nome'),
+        buscarTudo(() => sb.from('transactions').select('*').eq('owner_id', perfil.id).gte('data', mes).lte('data', monthEnd(mes)).order('data', { ascending: false }).order('created_at', { ascending: false })),
+        sb.from('customers').select('id, nome').eq('owner_id', perfil.id).order('nome'),
       ]);
       setMovs(m); setClientes(c.data || []);
     } catch (e) { toast(msgErro(e), false); setMovs([]); }
-  }, [sb, mes, toast]);
+  }, [sb, mes, toast, perfil.id]);
   useEffect(() => { carregar(); }, [carregar]);
 
   const cliNome = useMemo(() => new Map(clientes.map((c) => [c.id, c.nome])), [clientes]);

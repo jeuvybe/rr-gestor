@@ -198,7 +198,7 @@ export async function iniciarServidor({ porta = 54321, pasta = '.demo-data', log
         if (out.length !== 1) return responder(res, 406, { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned', details: `${out.length} rows`, hint: null });
         return responder(res, 200, out[0]);
       }
-      if (req.method !== 'GET' && !prefer.includes('return=representation')) return responder(res, 201);
+      if (req.method !== 'GET' && partes[0] !== 'rpc' && !prefer.includes('return=representation')) return responder(res, 201);
       responder(res, 200, out, { 'content-range': `0-${Math.max(0, out.length - 1)}/*` });
     } catch (e) {
       responder(res, 400, { code: e.code || 'P0001', message: e.message, hint: e.hint || null, details: e.detail || null });

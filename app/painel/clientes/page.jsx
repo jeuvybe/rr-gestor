@@ -41,13 +41,13 @@ export default function Clientes() {
   const carregar = useCallback(async () => {
     try {
       const [c, p, m] = await Promise.all([
-        buscarTudo(() => sb.from('customers').select('*').order('vencimento')),
-        sb.from('client_plans').select('*').order('nome'),
-        sb.from('message_templates').select('*'),
+        buscarTudo(() => sb.from('customers').select('*').eq('owner_id', perfil.id).order('vencimento')),
+        sb.from('client_plans').select('*').eq('owner_id', perfil.id).order('nome'),
+        sb.from('message_templates').select('*').eq('owner_id', perfil.id),
       ]);
       setLista(c); setPlanos(p.data || []); setModelos(m.data || []);
     } catch (e) { toast(msgErro(e), false); setLista([]); }
-  }, [sb, toast]);
+  }, [sb, toast, perfil.id]);
   useEffect(() => { carregar(); }, [carregar]);
   useEffect(() => { if (new URLSearchParams(location.search).get('novo')) setForm({ ...VAZIO, vencimento: addMonths(hoje, 1) }); }, [hoje]);
   useEffect(() => setPag(0), [aba, busca, porPag]);
@@ -72,7 +72,7 @@ export default function Clientes() {
       if (aba === 'semana' && !(ativo && c.vencimento > hoje && c.vencimento <= em7)) return false;
       if (aba === 'inadimplentes' && !(ativo && c.vencimento < hoje)) return false;
       if (aba === 'desativados' && ativo) return false;
-      if (q && !(norm(`${c.nome} ${c.email || ''} ${c.cidade || ''} ${planoMap.get(c.plano_id)?.nome || ''}`).includes(q) || (qd.length >= 3 && c.whatsapp.includes(qd)))) return false;
+      if (q && !(norm(`${c.nome} ${c.email || ''} ${c.cidade || ''} ${planoMap.get(c.plano_id)?.nome || ''} ${c.notas || ''}`).includes(q) || (qd.length >= 3 && c.whatsapp.includes(qd)))) return false;
       return true;
     });
   }, [lista, aba, busca, hoje, planoMap]);
@@ -326,7 +326,7 @@ export default function Clientes() {
         <p className="text-sm">O cadastro de <b>{excluir?.nome}</b> e o histórico de mensagens dele serão apagados. Os pagamentos continuam no Financeiro, sem o vínculo com o cliente. <b>Não dá para desfazer.</b> Se a ideia é só parar de cobrar, use <i>Desativar</i>.</p>
       </Modal>
 
-      {importar && <Importar onFechar={() => setImportar(false)} planos={planos} sb={sb} aoConcluir={() => { carregar(); recarregar(); }} hoje={hoje} />}
+      {importar && <Importar onFechar={() => setImportar(false)} planos={planos} existentes={lista} sb={sb} aoConcluir={() => { carregar(); recarregar(); }} hoje={hoje} />}
     </>
   );
 }
@@ -335,16 +335,18 @@ const Acao = ({ titulo, children, ...p }) => (
   <button title={titulo} aria-label={titulo} {...p} className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-night-soft">{children}</button>
 );
 
-// ---------------- importação de planilha
+// ---------------- importação de planilha (formato livre ou exportação do Gestor Lite)
 const ALIAS = {
-  nome: ['nome', 'cliente', 'nomecliente', 'name', 'razaosocial'],
-  whatsapp: ['whatsapp', 'telefone', 'celular', 'fone', 'phone', 'contato', 'numero', 'whats'],
-  email: ['email', 'e-mail', 'mail'],
+  nome: ['nome', 'cliente', 'nomecliente', 'nomedocliente', 'name', 'razaosocial'],
+  whatsapp: ['whatsapp', 'telefone', 'celular', 'fone', 'phone', 'contato', 'numero', 'whats', 'telefonewhatsapp', 'telefonewhatsappcomddi'],
+  email: ['email', 'emaildocliente', 'mail'],
   cidade: ['cidade', 'city', 'municipio'],
-  plano: ['plano', 'produto', 'servico', 'pacote'],
+  plano: ['plano', 'produto', 'servico', 'pacote', 'categoria', 'idcategoria', 'iddacategoria', 'iddacategorianumero'],
   valor: ['valor', 'mensalidade', 'preco', 'valormensal'],
-  vencimento: ['vencimento', 'datavencimento', 'proximovencimento', 'expira', 'expiraem', 'validade'],
-  notas: ['notas', 'observacao', 'obs', 'observacoes'],
+  vencimento: ['vencimento', 'datavencimento', 'proximovencimento', 'expira', 'expiraem', 'expiracao', 'validade'],
+  notas: ['notas', 'observacao', 'obs', 'observacoes', 'qualquerinformacaodocliente'],
+  senha: ['senha', 'senhadocliente', 'password'],
+  externo: ['identificadorexterno', 'idexterno', 'mac', 'macouqualquercoisa'],
 };
 function dataPlanilha(v) {
   if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
@@ -354,51 +356,102 @@ function dataPlanilha(v) {
   m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[0] : null;
 }
 const numPlanilha = (v) => { if (typeof v === 'number') return v; let s = String(v || '').replace(/[^\d.,-]/g, ''); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); return Number(s) || 0; };
+const txt = (v) => String(v ?? '').trim();
+/** Nome do plano a partir do valor da coluna: códigos numéricos (Gestor Lite) viram "Categoria 9949"; 0 = sem plano. */
+const nomePlano = (v) => { const s = txt(v); if (!s || s === '0') return ''; return /^\d+$/.test(s) ? `Categoria ${s}` : s; };
 
-function Importar({ onFechar, planos, sb, aoConcluir, hoje }) {
+/** Acha a linha de cabeçalho (o Gestor Lite tem linhas de instrução antes dela). */
+function lerTabela(ws) {
+  const linhas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+  const idx = linhas.slice(0, 20).findIndex((l) => { const ks = l.map(key); return ALIAS.nome.some((a) => ks.includes(a)) && ALIAS.whatsapp.some((a) => ks.includes(a)); });
+  if (idx < 0) return null;
+  const cab = linhas[idx].map((c) => key(c));
+  const mapa = {};
+  for (const [campo, nomes] of Object.entries(ALIAS)) { const i = cab.findIndex((c) => nomes.includes(c)); if (i >= 0) mapa[campo] = i; }
+  const corpo = linhas.slice(idx + 1).filter((l) => l.some((c) => txt(c)));
+  return { mapa, corpo };
+}
+
+function Importar({ onFechar, planos, existentes, sb, aoConcluir, hoje }) {
   const toast = useToast();
   const [linhas, setLinhas] = useState(null);
+  const [info, setInfo] = useState(null);
+  const [comSenha, setComSenha] = useState(true);
   const [prog, setProg] = useState(null);
+
   async function ler(file) {
     try {
       const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      if (!rows.length) return toast('A planilha está vazia.', false);
-      const cab = Object.keys(rows[0]); const mapa = {};
-      for (const [campo, nomes] of Object.entries(ALIAS)) { const h = cab.find((c) => nomes.includes(key(c))); if (h) mapa[campo] = h; }
-      if (!mapa.nome || !mapa.whatsapp) return toast('A planilha precisa ter as colunas "nome" e "whatsapp" (ou telefone/celular).', false);
-      const porNome = new Map(planos.map((p) => [key(p.nome), p]));
-      setLinhas(rows.map((r) => {
-        const pl = mapa.plano ? porNome.get(key(r[mapa.plano])) : null;
-        return {
-          nome: String(r[mapa.nome]).trim(), whatsapp: normalizaTelefone(r[mapa.whatsapp]), email: mapa.email ? String(r[mapa.email]).trim() || null : null,
-          cidade: mapa.cidade ? String(r[mapa.cidade]).trim() || null : null, plano_id: pl?.id || null,
-          valor: mapa.valor ? numPlanilha(r[mapa.valor]) : Number(pl?.valor || 0), vencimento: (mapa.vencimento && dataPlanilha(r[mapa.vencimento])) || addMonths(hoje, 1),
-          notas: mapa.notas ? String(r[mapa.notas]).trim() || null : null,
-        };
-      }).filter((r) => r.nome && r.whatsapp.length >= 10));
+      const t = lerTabela(wb.Sheets[wb.SheetNames[0]]);
+      if (!t) return toast('Não achei as colunas "nome" e "telefone/whatsapp" na planilha.', false);
+      const { mapa, corpo } = t; const col = (r, c) => (mapa[c] !== undefined ? r[mapa[c]] : '');
+      const jaTem = new Set((existentes || []).map((c) => c.whatsapp));
+      const vistos = new Set(); let duplicados = 0, invalidos = 0;
+      const lista = [];
+      for (const r of corpo) {
+        const nome = txt(col(r, 'nome')); const whatsapp = normalizaTelefone(col(r, 'whatsapp'));
+        if (!nome || whatsapp.length < 10) { invalidos++; continue; }
+        if (jaTem.has(whatsapp) || vistos.has(whatsapp)) { duplicados++; continue; }
+        vistos.add(whatsapp);
+        const emailBruto = txt(col(r, 'email'));
+        // no Gestor Lite, a coluna "email" costuma trazer o nome do cliente e "nome" o login: usa os dois
+        const apelido = emailBruto && !emailBruto.includes('@') ? emailBruto : '';
+        const nomeFinal = apelido && norm(apelido) !== norm(nome) ? `${apelido} (${nome})` : nome;
+        lista.push({
+          nome: nomeFinal, whatsapp, plano: nomePlano(col(r, 'plano')),
+          email: emailBruto.includes('@') ? emailBruto : null,
+          cidade: txt(col(r, 'cidade')) || null, valor: mapa.valor !== undefined ? numPlanilha(col(r, 'valor')) : null,
+          vencimento: dataPlanilha(col(r, 'vencimento')) || addMonths(hoje, 1),
+          notasOrig: txt(col(r, 'notas')), senha: txt(col(r, 'senha')), externo: txt(col(r, 'externo')),
+        });
+      }
+      const existentesNomes = new Set(planos.map((p) => key(p.nome)));
+      const novosPlanos = [...new Set(lista.map((l) => l.plano).filter((p) => p && !existentesNomes.has(key(p))))];
+      setLinhas(lista); setInfo({ duplicados, invalidos, novosPlanos, temSenha: lista.some((l) => l.senha), gestorLite: mapa.senha !== undefined || mapa.externo !== undefined });
     } catch { toast('Não consegui ler esse arquivo.', false); }
   }
+
   async function importar() {
+    setProg('preparando planos');
+    // cria os planos que ainda não existem (valor 0: ajuste depois em Planos)
+    const porNome = new Map(planos.map((p) => [key(p.nome), p]));
+    for (const nome of info.novosPlanos) {
+      const { data, error } = await sb.from('client_plans').insert({ nome, valor: 0, ciclo_meses: 1 }).select().single();
+      if (error) { setProg(null); return toast(msgErro(error), false); }
+      porNome.set(key(nome), data);
+    }
     let ok = 0, erro = null;
     for (let i = 0; i < linhas.length; i++) {
       setProg(`${i + 1} de ${linhas.length}`);
-      const { error } = await sb.from('customers').insert(linhas[i]);
+      const l = linhas[i]; const pl = l.plano ? porNome.get(key(l.plano)) : null;
+      const notas = [l.notasOrig, comSenha && l.senha && `Senha: ${l.senha}`, l.externo && `ID externo: ${l.externo}`].filter(Boolean).join('\n');
+      const { error } = await sb.from('customers').insert({
+        nome: l.nome, whatsapp: l.whatsapp, email: l.email, cidade: l.cidade, plano_id: pl?.id || null,
+        valor: l.valor ?? Number(pl?.valor || 0), vencimento: l.vencimento, notas: notas || null,
+      });
       if (error) { erro = msgErro(error); if (/limite|bloquead/i.test(erro)) break; } else ok++;
     }
     setProg(null); aoConcluir();
     toast(erro ? `${ok} clientes importados. Parou em: ${erro}` : `${ok} clientes importados.`, !erro);
     onFechar();
   }
+
   return (
-    <Modal aberto onFechar={onFechar} titulo="Importar clientes" sub="Planilha Excel ou CSV, primeira aba." largura="max-w-2xl"
+    <Modal aberto onFechar={onFechar} titulo="Importar clientes" sub="Planilha Excel ou CSV (primeira aba). Aceita a exportação de clientes do Gestor Lite." largura="max-w-3xl"
       rodape={<><Btn onClick={onFechar}>Cancelar</Btn><Btn variante="primario" onClick={importar} disabled={!linhas?.length} carregando={!!prog}>{prog ? `Importando ${prog}` : `Importar ${linhas?.length || ''} clientes`}</Btn></>}>
       <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => e.target.files[0] && ler(e.target.files[0])} className="block w-full text-sm file:mr-3 file:h-10 file:rounded-lg file:border-0 file:bg-brand-navy file:px-4 file:font-semibold file:text-white dark:file:bg-brand-cyan dark:file:text-brand-navy" />
-      <p className="mt-3 text-xs text-slate-500">Colunas reconhecidas: <b>nome</b> e <b>whatsapp</b> (obrigatórias), e-mail, cidade, plano (pelo nome cadastrado em Planos), valor, vencimento (dd/mm/aaaa) e notas. Sem vencimento, fica para daqui a 1 mês.</p>
+      <p className="mt-3 text-xs text-slate-500">Colunas reconhecidas: <b>nome</b> e <b>telefone/whatsapp</b> (obrigatórias), e-mail, cidade, plano ou categoria, valor, vencimento (dd/mm/aaaa), notas, senha e identificador externo. Sem vencimento, fica para daqui a 1 mês.</p>
+      {info && (
+        <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 text-sm dark:bg-night-soft">
+          <div><b>{linhas.length}</b> clientes prontos para importar{info.gestorLite && ' (formato Gestor Lite)'}.{info.duplicados > 0 && ` ${info.duplicados} já cadastrados ou repetidos serão pulados.`}{info.invalidos > 0 && ` ${info.invalidos} linhas sem nome ou telefone válido serão ignoradas.`}</div>
+          {info.novosPlanos.length > 0 && <div>Planos que serão criados com valor R$ 0 (ajuste depois em <b>Planos</b>): {info.novosPlanos.join(', ')}.</div>}
+          {info.temSenha && <Interruptor ligado={comSenha} onChange={setComSenha} rotulo="Guardar a senha de cada cliente nas notas" desc="Fica em texto aberto no cadastro do cliente." />}
+        </div>
+      )}
       {linhas && (
         <div className="mt-4 max-h-64 overflow-auto rounded-lg border border-line dark:border-night-line">
-          <table className="w-full text-xs"><thead><tr className="bg-slate-50 text-left dark:bg-night-soft"><th className="px-2 py-1.5">Nome</th><th className="px-2 py-1.5">WhatsApp</th><th className="px-2 py-1.5">Valor</th><th className="px-2 py-1.5">Vencimento</th></tr></thead>
-            <tbody>{linhas.slice(0, 50).map((l, i) => <tr key={i} className="border-t border-line dark:border-night-line"><td className="px-2 py-1">{l.nome}</td><td className="px-2 py-1">{fmtTelefone(l.whatsapp)}</td><td className="px-2 py-1">{brl(l.valor)}</td><td className="px-2 py-1">{fmtData(l.vencimento)}</td></tr>)}</tbody></table>
+          <table className="w-full text-xs"><thead><tr className="bg-slate-50 text-left dark:bg-night-soft"><th className="px-2 py-1.5">Nome</th><th className="px-2 py-1.5">WhatsApp</th><th className="px-2 py-1.5">Plano</th><th className="px-2 py-1.5">Vencimento</th></tr></thead>
+            <tbody>{linhas.slice(0, 50).map((l, i) => <tr key={i} className="border-t border-line dark:border-night-line"><td className="px-2 py-1">{l.nome}</td><td className="px-2 py-1">{fmtTelefone(l.whatsapp)}</td><td className="px-2 py-1">{l.plano || '—'}</td><td className="px-2 py-1">{fmtData(l.vencimento)}</td></tr>)}</tbody></table>
           {linhas.length > 50 && <p className="px-2 py-1.5 text-xs text-slate-500">… e mais {linhas.length - 50}</p>}
         </div>
       )}

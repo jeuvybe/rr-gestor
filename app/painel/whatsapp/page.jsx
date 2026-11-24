@@ -24,13 +24,13 @@ export default function WhatsApp() {
 
   const carregar = useCallback(async () => {
     const [m, l, c] = await Promise.all([
-      sb.from('message_templates').select('*'),
-      sb.from('message_logs').select('*').order('created_at', { ascending: false }).limit(60),
-      sb.from('customers').select('id, nome'),
+      sb.from('message_templates').select('*').eq('owner_id', perfil.id),
+      sb.from('message_logs').select('*').eq('owner_id', perfil.id).order('created_at', { ascending: false }).limit(60),
+      sb.from('customers').select('id, nome').eq('owner_id', perfil.id),
     ]);
     setModelos(ORDEM.map((g) => m.data?.find((x) => x.gatilho === g)).filter(Boolean));
     setLogs(l.data || []); setNomes(new Map((c.data || []).map((x) => [x.id, x.nome])));
-  }, [sb]);
+  }, [sb, perfil.id]);
   useEffect(() => { carregar(); }, [carregar]);
 
   const muda = (id, campo, v) => setModelos((ms) => ms.map((m) => (m.id === id ? { ...m, [campo]: v, _alterado: true } : m)));

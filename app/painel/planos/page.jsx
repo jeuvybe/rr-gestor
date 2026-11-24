@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
-import { Titulo } from '@/components/AppShell';
+import { usePainel, Titulo } from '@/components/AppShell';
 import { Btn, Campo, Modal, Vazio, Carregando, useToast } from '@/components/ui';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { brl, int, msgErro } from '@/lib/format';
@@ -9,6 +9,7 @@ import { brl, int, msgErro } from '@/lib/format';
 export default function Planos() {
   const sb = supabaseBrowser();
   const toast = useToast();
+  const { perfil } = usePainel();
   const [planos, setPlanos] = useState(null);
   const [uso, setUso] = useState({});
   const [form, setForm] = useState(null);
@@ -16,11 +17,11 @@ export default function Planos() {
   const [salvando, setSalvando] = useState(false);
 
   const carregar = useCallback(async () => {
-    const [p, c] = await Promise.all([sb.from('client_plans').select('*').order('valor'), sb.from('customers').select('plano_id').neq('status', 'desativado')]);
+    const [p, c] = await Promise.all([sb.from('client_plans').select('*').eq('owner_id', perfil.id).order('valor'), sb.from('customers').select('plano_id').eq('owner_id', perfil.id).neq('status', 'desativado')]);
     if (p.error) toast(msgErro(p.error), false);
     const u = {}; (c.data || []).forEach((x) => { if (x.plano_id) u[x.plano_id] = (u[x.plano_id] || 0) + 1; });
     setPlanos(p.data || []); setUso(u);
-  }, [sb, toast]);
+  }, [sb, toast, perfil.id]);
   useEffect(() => { carregar(); }, [carregar]);
 
   async function salvar(e) {

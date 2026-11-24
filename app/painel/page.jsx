@@ -17,9 +17,9 @@ export default function Page() {
 
   useEffect(() => {
     const sb = supabaseBrowser();
-    carregarBase(sb).then(setDados).catch((e) => toast(msgErro(e), false));
-    sb.from('whatsapp_instances').select('status').maybeSingle().then(({ data }) => setWa(data?.status || 'desconectado'));
-  }, [toast]);
+    carregarBase(sb, perfil.id).then(setDados).catch((e) => toast(msgErro(e), false));
+    sb.from('whatsapp_instances').select('status').eq('owner_id', perfil.id).maybeSingle().then(({ data }) => setWa(data?.status || 'desconectado'));
+  }, [toast, perfil.id]);
 
   if (!dados) return <Carregando />;
   const passos = [

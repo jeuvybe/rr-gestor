@@ -39,7 +39,7 @@ export async function semear(db) {
     await q(`update public.profiles set plan_id = $2, chave_pix = $3, is_admin = $4, created_at = now() - make_interval(days => $5) where id = $1`,
       [c.id, planos['Ilimitado'], c.pix || null, c.id === USUARIOS_DEMO.admin.id, Math.round((c.meses || 10) * 30 + 5)]);
     if (c.plano !== 'Grátis' && c.expira) {
-      await q(`insert into public.subscription_payments (profile_id, plan_id, valor, meses, pago_em, valido_ate, obs) values ($1, $2, (select preco from public.plans where id = $2), 1, $3::date - 30, $3, 'Pix')`, [c.id, planos[c.plano], c.expira]);
+      await q(`insert into public.subscription_payments (profile_id, plan_id, valor, meses, pago_em, valido_ate, obs) values ($1, $2, (select preco from public.plans where id = $2), 1, least($3::date - 30, public.hoje_br()), $3, 'Pix')`, [c.id, planos[c.plano], c.expira]);
     }
     if (!c.clientes) continue;
 

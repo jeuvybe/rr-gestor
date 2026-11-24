@@ -77,8 +77,8 @@ export default function Admin() {
     <>
       <Titulo titulo="Assinantes" sub="Contas que usam o sistema, planos e liberação de pagamentos." />
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[[Users, 'Assinantes', int(k.total), `${int(k.novos30)} novos em 30 dias`], [Wallet, 'Receita mensal (planos pagos em dia)', brl(k.mrr), `${int(k.pagos)} contas pagantes`],
-          [CalendarClock, 'Vencem em 7 dias', int(k.vencendo), `${int(k.vencidos)} já vencidos`], [Smartphone, 'WhatsApp conectado', int(k.wa), `${int(k.bloqueados)} contas bloqueadas`]].map(([I, r, v, s]) => (
+        {[[Users, 'Assinantes', int(k.total), `${int(k.novos30)} ${k.novos30 === 1 ? 'novo' : 'novos'} em 30 dias`], [Wallet, 'Receita mensal (planos pagos em dia)', brl(k.mrr), `${int(k.pagos)} ${k.pagos === 1 ? 'conta pagante' : 'contas pagantes'}`],
+          [CalendarClock, 'Vencem em 7 dias', int(k.vencendo), `${int(k.vencidos)} ${k.vencidos === 1 ? 'já vencida' : 'já vencidas'}`], [Smartphone, 'WhatsApp conectado', int(k.wa), `${int(k.bloqueados)} ${k.bloqueados === 1 ? 'conta bloqueada' : 'contas bloqueadas'}`]].map(([I, r, v, s]) => (
           <div key={r} className="card p-4">
             <div className="flex items-center justify-between gap-2 text-sm text-slate-500 dark:text-slate-400"><span>{r}</span><I className="h-4 w-4 text-brand-cyan" /></div>
             <div className="mt-1 font-display text-[clamp(20px,2vw,26px)] font-bold tabular-nums">{v}</div>
