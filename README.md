@@ -82,7 +82,7 @@ Quando aparecer **Ready**, abra <http://localhost:3000/login>.
 ### 1. Supabase (banco e login)
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Abra **SQL Editor**, cole todo o arquivo `supabase/migrations/0001_schema.sql` e clique em **Run**. Depois faça o mesmo com `0002_servidores_modelos_area_cliente.sql`.
+2. Abra **SQL Editor**, cole todo o arquivo `supabase/migrations/0001_schema.sql` e clique em **Run**. Depois faça o mesmo, nesta ordem, com `0002_servidores_modelos_area_cliente.sql` e `0003_conta_desativada.sql`.
 3. Em **Project Settings › API**, copie a `Project URL`, a chave `anon public` e a chave `service_role`. A `service_role` é secreta.
 4. Em **Authentication › URL Configuration**:
    - **Site URL**: `https://seu-dominio.com.br`

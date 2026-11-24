@@ -3,9 +3,10 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Server, Wallet, Package, MessageCircle, UserCircle2, Shield, LogOut, Menu, X, Crown, AlertTriangle, Lock, Settings,
+  LayoutDashboard, Users, Server, Wallet, Package, MessageCircle, UserCircle2, Shield, LogOut, Menu, X, Crown, AlertTriangle, Settings,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
+import TelaRenovacao from '@/components/TelaRenovacao';
 import { BotaoTema, ToastProvider } from '@/components/ui';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { fmtData, int } from '@/lib/format';
@@ -41,7 +42,10 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
     const [{ data: u }, { data: p }] = await Promise.all([sb.rpc('meu_uso'), sb.from('profiles').select('*').eq('id', perfil.id).single()]);
     if (u?.[0]) setUso(u[0]);
     if (p) setPerfil(p);
+    return p;
   }, [sb, perfil.id]);
+  // a cada troca de página confere se a conta foi desativada (ou reativada) pelo administrador
+  useEffect(() => { if (area === 'painel') recarregar(); }, [path]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sair = async () => { await sb.auth.signOut(); router.replace('/login'); router.refresh(); };
   const ativo = (href) => (href === '/painel' || href === '/admin' ? path === href : path.startsWith(href));
@@ -74,6 +78,15 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
     </div>
   );
 
+  // conta desativada: nada do painel, só a tela de renovação
+  if (area === 'painel' && perfil.status === 'bloqueado') {
+    return (
+      <ToastProvider>
+        <TelaRenovacao sb={sb} perfil={perfil} uso={uso} sair={sair} verificar={async () => (await recarregar())?.status !== 'bloqueado'} />
+      </ToastProvider>
+    );
+  }
+
   return (
     <ToastProvider>
       <Ctx.Provider value={{ perfil, uso, recarregar, area }}>
@@ -97,10 +110,7 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
               <button onClick={sair} className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-brand-navy dark:hover:bg-night-soft dark:hover:text-white"><LogOut className="h-4 w-4" /><span className="hidden sm:inline">Sair</span></button>
             </div>
           </header>
-          {area === 'painel' && uso?.status === 'bloqueado' && (
-            <Aviso tom="vermelho" I={Lock}>Sua conta está desativada: você consegue consultar os dados, mas não cadastrar clientes nem enviar cobranças. Fale com o suporte.</Aviso>
-          )}
-          {area === 'painel' && uso?.vencido && uso?.status !== 'bloqueado' && (
+          {area === 'painel' && uso?.vencido && (
             <Aviso tom="ambar" I={AlertTriangle}>Seu plano pago venceu em {fmtData(uso.expira_em)}. Até a renovação, vale o limite do plano {uso.plano_nome} ({uso.limite ?? '∞'} clientes). <Link href="/painel/conta" className="font-semibold underline">Renovar</Link></Aviso>
           )}
           <main className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6">{children}</main>

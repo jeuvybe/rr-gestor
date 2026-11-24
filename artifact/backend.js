@@ -4,6 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { prepararBanco, criarNucleo, PARSERS } from '../scripts/demo/nucleo.mjs';
 import m0001 from '../supabase/migrations/0001_schema.sql';
 import m0002 from '../supabase/migrations/0002_servidores_modelos_area_cliente.sql';
+import m0003 from '../supabase/migrations/0003_conta_desativada.sql';
 import * as rotaWhatsapp from '../app/api/whatsapp/[acao]/route.js';
 import * as rotaCobrar from '../app/api/cobrar/route.js';
 import * as rotaRodar from '../app/api/admin/rodar-cobrancas/route.js';
@@ -27,7 +28,7 @@ export async function iniciarBackend({ progresso = () => {}, aoEnviar = () => {}
   const db = await PGlite.create({ pgliteWasmModule, initdbWasmModule, fsBundle, parsers: PARSERS });
   progresso('Criando tabelas e dados de exemplo…');
   const log = (m) => console.log('[demo]', m);
-  await prepararBanco(db, { migracoes: [{ nome: '0001_schema.sql', sql: m0001 }, { nome: '0002_servidores_modelos_area_cliente.sql', sql: m0002 }], nova: true, log });
+  await prepararBanco(db, { migracoes: [{ nome: '0001_schema.sql', sql: m0001 }, { nome: '0002_servidores_modelos_area_cliente.sql', sql: m0002 }, { nome: '0003_conta_desativada.sql', sql: m0003 }], nova: true, log });
   const nucleo = criarNucleo(db, { log, evoKey: 'demo', sistema: 'rr-sistema', aoEnviar });
 
   const original = window.fetch.bind(window);
