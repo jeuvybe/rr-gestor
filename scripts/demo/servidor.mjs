@@ -15,6 +15,22 @@ const b64url = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 export const jwt = (claims) => `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url({ ...claims, exp: Math.floor(Date.now() / 1000) + 7 * 86400 })}.demo`;
 export const CODIGO_DEMO = '123456';
 
+const PASTA_MIG = new URL('../../supabase/migrations/', import.meta.url);
+async function aplicarMigracoes(db) {
+  await db.exec(`create table if not exists public._demo_migracoes (nome text primary key)`);
+  const feitas = new Set((await db.query(`select nome from public._demo_migracoes`)).rows.map((r) => r.nome));
+  // bancos criados antes deste controle já tinham a 0001
+  if (!feitas.size && (await db.query(`select to_regclass('public.plans') t`)).rows[0].t) { await db.query(`insert into public._demo_migracoes values ('0001_schema.sql')`); feitas.add('0001_schema.sql'); }
+  const novas = [];
+  for (const arq of fs.readdirSync(PASTA_MIG).filter((x) => x.endsWith('.sql')).sort()) {
+    if (feitas.has(arq)) continue;
+    await db.exec(fs.readFileSync(new URL(arq, PASTA_MIG), 'utf8'));
+    await db.query(`insert into public._demo_migracoes values ($1)`, [arq]);
+    novas.push(arq);
+  }
+  return novas;
+}
+
 export async function iniciarServidor({ porta = 54321, pasta = '.demo-data', log = console.log } = {}) {
   const nova = !fs.existsSync(path.join(pasta, 'PG_VERSION'));
   const db = new PGlite(pasta, {
@@ -29,8 +45,7 @@ export async function iniciarServidor({ porta = 54321, pasta = '.demo-data', log
       create table auth.users (id uuid primary key default gen_random_uuid(), email text unique, phone text unique, raw_user_meta_data jsonb default '{}', created_at timestamptz default now());
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.uid', true), '')::uuid $$;
       grant usage on schema auth to authenticated, anon; grant execute on function auth.uid() to authenticated, anon;`);
-    const pastaMig = new URL('../../supabase/migrations/', import.meta.url);
-    for (const arq of fs.readdirSync(pastaMig).filter((x) => x.endsWith('.sql')).sort()) await db.exec(fs.readFileSync(new URL(arq, pastaMig), 'utf8'));
+    await aplicarMigracoes(db);
     await db.exec(`grant usage on schema public to authenticated, anon;
       grant all on all tables in schema public to authenticated; grant select on all tables in schema public to anon;
       grant execute on all functions in schema public to authenticated, anon;`);
@@ -39,6 +54,13 @@ export async function iniciarServidor({ porta = 54321, pasta = '.demo-data', log
       throw e;
     }
     log('• Dados de exemplo criados.');
+  } else {
+    // banco de uma versão anterior da demonstração: aplica só as migrações novas
+    const novas = await aplicarMigracoes(db);
+    if (novas.length) {
+      await db.exec(`grant all on all tables in schema public to authenticated; grant select on all tables in schema public to anon; grant execute on all functions in schema public to authenticated, anon;`);
+      log(`• Banco atualizado: ${novas.join(', ')}`);
+    }
   }
 
   // ------------------------------------------------------------ utilidades
