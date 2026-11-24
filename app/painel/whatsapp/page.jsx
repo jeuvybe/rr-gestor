@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { MessageCircle, Save, AlertTriangle } from 'lucide-react';
 import { usePainel, Titulo } from '@/components/AppShell';
 import ConexaoWhatsApp from '@/components/ConexaoWhatsApp';
+import ModelosMensagem from '@/components/ModelosMensagem';
 import { Btn, Badge, Interruptor, Vazio, useToast } from '@/components/ui';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { GATILHOS, VARIAVEIS, hojeBR, montaMensagem } from '@/lib/cobranca';
@@ -61,7 +62,7 @@ export default function WhatsApp() {
 
       <section className="mb-5">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-          <div><h2 className="font-display text-lg font-bold">Mensagens automáticas</h2><p className="text-sm text-slate-500 dark:text-slate-400">Enviadas todo dia às 9h para clientes ativos com notificação ligada. Cada cliente recebe no máximo uma por dia.</p></div>
+          <div><h2 className="font-display text-lg font-bold">Cobranças automáticas</h2><p className="text-sm text-slate-500 dark:text-slate-400">Enviadas todo dia às 9h para clientes ativos com notificação ligada. Cada cliente recebe no máximo uma por dia.</p></div>
           {!perfil.chave_pix && <Link href="/painel/conta" className="text-sm font-semibold text-amber-700 underline dark:text-amber-300">Cadastre sua chave Pix para usar {'{pix}'}</Link>}
         </div>
         <div className="grid gap-4 xl:grid-cols-3">
@@ -92,6 +93,8 @@ export default function WhatsApp() {
         </div>
       </section>
 
+      <ModelosMensagem sb={sb} perfil={perfil} />
+
       <section className="card overflow-hidden">
         <div className="p-4"><h2 className="font-display text-base font-semibold">Histórico de envios</h2><p className="text-xs text-slate-500">Últimas 60 mensagens</p></div>
         {!logs ? null : !logs.length ? <Vazio msg="Nenhuma mensagem enviada ainda." /> : (
@@ -103,7 +106,7 @@ export default function WhatsApp() {
                   <tr key={l.id}>
                     <td className="whitespace-nowrap px-4 py-2.5 tabular-nums">{new Date(l.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
                     <td className="px-4 py-2.5">{nomes.get(l.customer_id) || fmtTelefone(l.telefone)}</td>
-                    <td className="px-4 py-2.5">{GATILHOS[l.gatilho]?.curto || (l.gatilho === 'manual' ? 'Manual' : 'Teste')}</td>
+                    <td className="px-4 py-2.5">{GATILHOS[l.gatilho]?.curto || { manual: 'Manual', modelo: 'Modelo', recibo: 'Recibo', teste: 'Teste' }[l.gatilho]}</td>
                     <td className="max-w-[360px] truncate px-4 py-2.5 text-slate-500" title={l.texto}>{l.texto}</td>
                     <td className="px-4 py-2.5">{l.status === 'enviado' ? <Badge tom="verde">Enviado</Badge> : <Badge tom="vermelho" >Erro</Badge>}{l.erro && <div className="max-w-[200px] truncate text-xs text-rose-600" title={l.erro}>{l.erro}</div>}</td>
                   </tr>

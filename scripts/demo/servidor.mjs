@@ -29,7 +29,8 @@ export async function iniciarServidor({ porta = 54321, pasta = '.demo-data', log
       create table auth.users (id uuid primary key default gen_random_uuid(), email text unique, phone text unique, raw_user_meta_data jsonb default '{}', created_at timestamptz default now());
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.uid', true), '')::uuid $$;
       grant usage on schema auth to authenticated, anon; grant execute on function auth.uid() to authenticated, anon;`);
-    await db.exec(fs.readFileSync(new URL('../../supabase/migrations/0001_schema.sql', import.meta.url), 'utf8'));
+    const pastaMig = new URL('../../supabase/migrations/', import.meta.url);
+    for (const arq of fs.readdirSync(pastaMig).filter((x) => x.endsWith('.sql')).sort()) await db.exec(fs.readFileSync(new URL(arq, pastaMig), 'utf8'));
     await db.exec(`grant usage on schema public to authenticated, anon;
       grant all on all tables in schema public to authenticated; grant select on all tables in schema public to anon;
       grant execute on all functions in schema public to authenticated, anon;`);

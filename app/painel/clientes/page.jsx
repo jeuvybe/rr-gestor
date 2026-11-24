@@ -1,22 +1,24 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import * as XLSX from 'xlsx';
 import {
-  UserPlus, Search, Pencil, Trash2, Send, BadgeCheck, Power, Upload, FileSpreadsheet, Bell, BellOff, ChevronLeft, ChevronRight, Crown, MoreHorizontal,
+  UserPlus, Search, Upload, FileSpreadsheet, BellOff, ChevronLeft, ChevronRight, Crown, Monitor, MessageCircle, Zap, AlertTriangle, Globe, Copy, Trash2, Send, KeyRound, Dices,
 } from 'lucide-react';
 import { usePainel, Titulo } from '@/components/AppShell';
-import { Btn, Campo, Selecao, Modal, Badge, Vazio, Carregando, Interruptor, useToast } from '@/components/ui';
+import { Btn, Campo, Selecao, Modal, Vazio, Carregando, Interruptor, useToast } from '@/components/ui';
+import OpcoesCliente, { SeloVencimento } from '@/components/OpcoesCliente';
+import ImportarClientes from '@/components/ImportarClientes';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { buscarTudo, statusCliente } from '@/lib/dados';
-import { hojeBR, gatilhoDoCliente, montaMensagem, GATILHOS } from '@/lib/cobranca';
-import { addDays, addMonths, brl, daysBetween, fmtData, fmtTelefone, int, msgErro, norm, normalizaTelefone, key } from '@/lib/format';
+import { hojeBR, gatilhoDoCliente, montaMensagem, GATILHOS, linkArea } from '@/lib/cobranca';
+import { addDays, addMonths, brl, daysBetween, fmtData, fmtTelefone, int, msgErro, norm, normalizaTelefone } from '@/lib/format';
 
 const ABAS = [
-  ['todos', 'Todos'], ['ativos', 'Ativos'], ['hoje', 'Expiram hoje'], ['semana', 'Próximos 7 dias'], ['inadimplentes', 'Inadimplentes'], ['desativados', 'Desativados'],
+  ['todos', 'Todos'], ['ativos', 'Ativos'], ['hoje', 'Expiram hoje'], ['semana', 'Próximos 7 dias'], ['inadimplentes', 'Inadimplentes'], ['alerta', 'Com alerta'], ['desativados', 'Desativados'],
 ];
-const FORMAS = ['Pix', 'Dinheiro', 'Cartão de crédito', 'Cartão de débito', 'Boleto', 'Transferência'];
-const VAZIO = { id: null, nome: '', whatsapp: '', email: '', cidade: '', plano_id: '', valor: '', vencimento: '', notificar: true, notas: '' };
+const ORDENS = [['venc', 'Vencimento mais próximo'], ['venc_desc', 'Vencimento mais distante'], ['nome', 'Nome (A–Z)'], ['recentes', 'Cadastrados por último']];
+const VAZIO = { id: null, nome: '', usuario: '', senha_area: '', whatsapp: '', email: '', cidade: '', mac: '', servidor_id: '', plano_id: '', valor: '', vencimento: '', notificar: true, telas: 1, notas: '' };
+const senhaAleatoria = () => Math.random().toString(36).slice(2, 8);
 
 export default function Clientes() {
   const sb = supabaseBrowser();
@@ -25,71 +27,86 @@ export default function Clientes() {
   const hoje = hojeBR();
   const [lista, setLista] = useState(null);
   const [planos, setPlanos] = useState([]);
+  const [modelosAuto, setModelosAuto] = useState([]);
   const [modelos, setModelos] = useState([]);
+  const [servidores, setServidores] = useState([]);
   const [aba, setAba] = useState('todos');
+  const [servFiltro, setServFiltro] = useState('');
+  const [ordem, setOrdem] = useState('venc');
   const [busca, setBusca] = useState('');
   const [porPag, setPorPag] = useState(25);
   const [pag, setPag] = useState(0);
   const [form, setForm] = useState(null);
-  const [pagto, setPagto] = useState(null);
-  const [cobrar, setCobrar] = useState(null);
-  const [excluir, setExcluir] = useState(null);
+  const [opcoes, setOpcoes] = useState(null);
+  const [envio, setEnvio] = useState(null);
   const [importar, setImportar] = useState(false);
-  const [menu, setMenu] = useState(null);
+  const [verArea, setVerArea] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [enviandoFast, setEnviandoFast] = useState('');
 
   const carregar = useCallback(async () => {
     try {
-      const [c, p, m] = await Promise.all([
+      const [c, p, ma, mm, sv] = await Promise.all([
         buscarTudo(() => sb.from('customers').select('*').eq('owner_id', perfil.id).order('vencimento')),
         sb.from('client_plans').select('*').eq('owner_id', perfil.id).order('nome'),
         sb.from('message_templates').select('*').eq('owner_id', perfil.id),
+        sb.from('message_models').select('*').eq('owner_id', perfil.id).order('nome'),
+        sb.from('servers').select('*').eq('owner_id', perfil.id).order('nome'),
       ]);
-      setLista(c); setPlanos(p.data || []); setModelos(m.data || []);
+      setLista(c); setPlanos(p.data || []); setModelosAuto(ma.data || []); setModelos(mm.data || []); setServidores(sv.data || []);
+      setOpcoes((o) => (o ? c.find((x) => x.id === o.id) || null : o));
     } catch (e) { toast(msgErro(e), false); setLista([]); }
   }, [sb, toast, perfil.id]);
   useEffect(() => { carregar(); }, [carregar]);
   useEffect(() => { if (new URLSearchParams(location.search).get('novo')) setForm({ ...VAZIO, vencimento: addMonths(hoje, 1) }); }, [hoje]);
-  useEffect(() => setPag(0), [aba, busca, porPag]);
+  useEffect(() => setPag(0), [aba, busca, porPag, servFiltro, ordem]);
 
   const planoMap = useMemo(() => new Map(planos.map((p) => [p.id, p])), [planos]);
-  const cont = useMemo(() => {
-    const l = lista || []; const em7 = addDays(hoje, 7);
-    const at = l.filter((c) => c.status !== 'desativado');
-    return {
-      todos: l.length, ativos: at.filter((c) => c.vencimento >= hoje).length, hoje: at.filter((c) => c.vencimento === hoje).length,
-      semana: at.filter((c) => c.vencimento > hoje && c.vencimento <= em7).length, inadimplentes: at.filter((c) => c.vencimento < hoje).length,
-      desativados: l.length - at.length,
-    };
-  }, [lista, hoje]);
+  const servMap = useMemo(() => new Map(servidores.map((s) => [s.id, s])), [servidores]);
+  const modeloMap = useMemo(() => new Map(modelos.map((m) => [m.id, m])), [modelos]);
+  const fast = modelos.find((m) => m.fast);
+
+  const passaAba = useCallback((c, k) => {
+    const ativo = c.status !== 'desativado'; const em7 = addDays(hoje, 7);
+    if (k === 'ativos') return ativo && c.vencimento >= hoje;
+    if (k === 'hoje') return ativo && c.vencimento === hoje;
+    if (k === 'semana') return ativo && c.vencimento > hoje && c.vencimento <= em7;
+    if (k === 'inadimplentes') return ativo && c.vencimento < hoje;
+    if (k === 'alerta') return !!c.alerta;
+    if (k === 'desativados') return !ativo;
+    return true;
+  }, [hoje]);
+  const cont = useMemo(() => Object.fromEntries(ABAS.map(([k]) => [k, (lista || []).filter((c) => passaAba(c, k)).length])), [lista, passaAba]);
+  const contServ = useMemo(() => { const m = {}; (lista || []).forEach((c) => { m[c.servidor_id || '_'] = (m[c.servidor_id || '_'] || 0) + 1; }); return m; }, [lista]);
 
   const filtrados = useMemo(() => {
-    const q = norm(busca); const qd = busca.replace(/\D/g, ''); const em7 = addDays(hoje, 7);
-    return (lista || []).filter((c) => {
-      const ativo = c.status !== 'desativado';
-      if (aba === 'ativos' && !(ativo && c.vencimento >= hoje)) return false;
-      if (aba === 'hoje' && !(ativo && c.vencimento === hoje)) return false;
-      if (aba === 'semana' && !(ativo && c.vencimento > hoje && c.vencimento <= em7)) return false;
-      if (aba === 'inadimplentes' && !(ativo && c.vencimento < hoje)) return false;
-      if (aba === 'desativados' && ativo) return false;
-      if (q && !(norm(`${c.nome} ${c.email || ''} ${c.cidade || ''} ${planoMap.get(c.plano_id)?.nome || ''} ${c.notas || ''}`).includes(q) || (qd.length >= 3 && c.whatsapp.includes(qd)))) return false;
-      return true;
-    });
-  }, [lista, aba, busca, hoje, planoMap]);
+    const q = norm(busca); const qd = busca.replace(/\D/g, '');
+    const l = (lista || []).filter((c) => passaAba(c, aba)
+      && (!servFiltro || (servFiltro === '_' ? !c.servidor_id : c.servidor_id === servFiltro))
+      && (!q || norm(`${c.nome} ${c.usuario || ''} ${c.email || ''} ${c.cidade || ''} ${c.mac || ''} ${planoMap.get(c.plano_id)?.nome || ''} ${c.notas || ''}`).includes(q) || (qd.length >= 3 && c.whatsapp.includes(qd))));
+    const cmp = { venc: (a, b) => (a.vencimento < b.vencimento ? -1 : 1), venc_desc: (a, b) => (a.vencimento > b.vencimento ? -1 : 1), nome: (a, b) => a.nome.localeCompare(b.nome, 'pt-BR'), recentes: (a, b) => (a.created_at > b.created_at ? -1 : 1) }[ordem];
+    // desativados sempre no fim da lista
+    return l.sort((a, b) => (a.status === 'desativado') - (b.status === 'desativado') || cmp(a, b));
+  }, [lista, aba, busca, servFiltro, ordem, planoMap, passaAba]);
   const totPag = Math.max(1, Math.ceil(filtrados.length / porPag));
   const pagina = filtrados.slice(pag * porPag, pag * porPag + porPag);
   const noLimite = uso?.limite != null && uso.usados >= uso.limite;
   const bloqueado = uso?.status === 'bloqueado';
+  const link = linkArea(perfil);
 
   // ---------- ações
+  const novo = () => setForm({ ...VAZIO, vencimento: addMonths(hoje, 1), senha_area: senhaAleatoria() });
+  const editar = (c) => setForm({ ...VAZIO, ...c, usuario: c.usuario || '', senha_area: c.senha_area || '', email: c.email || '', cidade: c.cidade || '', mac: c.mac || '', notas: c.notas || '', plano_id: c.plano_id || '', servidor_id: c.servidor_id || '', valor: String(c.valor).replace('.', ','), whatsapp: c.whatsapp.startsWith('55') ? fmtTelefone(c.whatsapp) : `+${c.whatsapp}` });
+
   async function salvar(e) {
     e.preventDefault();
     const tel = normalizaTelefone(form.whatsapp);
     if (tel.length < 10) return toast('Informe um WhatsApp válido com DDD.', false);
     setSalvando(true);
     const reg = {
-      nome: form.nome.trim(), whatsapp: tel, email: form.email.trim() || null, cidade: form.cidade.trim() || null,
-      plano_id: form.plano_id || null, valor: Number(String(form.valor).replace(',', '.')) || 0, vencimento: form.vencimento, notificar: form.notificar, notas: form.notas.trim() || null,
+      nome: form.nome.trim(), usuario: form.usuario.trim() || null, senha_area: form.senha_area.trim() || null, whatsapp: tel, email: form.email.trim() || null,
+      cidade: form.cidade.trim() || null, mac: form.mac.trim() || null, servidor_id: form.servidor_id || null, plano_id: form.plano_id || null,
+      valor: Number(String(form.valor).replace(/\./g, '').replace(',', '.')) || 0, vencimento: form.vencimento, notificar: form.notificar, telas: Number(form.telas) || 1, notas: form.notas.trim() || null,
     };
     const { error } = form.id ? await sb.from('customers').update(reg).eq('id', form.id) : await sb.from('customers').insert(reg);
     setSalvando(false);
@@ -99,63 +116,70 @@ export default function Clientes() {
   }
 
   async function alternarStatus(c) {
-    setMenu(null);
     const { error } = await sb.from('customers').update({ status: c.status === 'desativado' ? 'ativo' : 'desativado' }).eq('id', c.id);
     if (error) return toast(msgErro(error), false);
-    toast(c.status === 'desativado' ? 'Cliente reativado.' : 'Cliente desativado: ele não recebe cobranças e não conta no limite do plano.');
+    toast(c.status === 'desativado' ? `${c.nome} reativado.` : `${c.nome} desativado: não recebe cobranças e não conta no limite do plano.`);
     carregar(); recarregar();
   }
 
-  async function apagar() {
-    const { error } = await sb.from('customers').delete().eq('id', excluir.id);
-    if (error) return toast(msgErro(error), false);
-    toast('Cliente excluído.'); setExcluir(null); carregar(); recarregar();
-  }
-
-  async function registrarPagamento(e) {
-    e.preventDefault(); setSalvando(true);
-    const { data, error } = await sb.rpc('registrar_pagamento', {
-      p_customer: pagto.c.id, p_valor: Number(String(pagto.valor).replace(',', '.')), p_forma: pagto.forma, p_data: pagto.data, p_avancar: pagto.avancar,
-    });
-    setSalvando(false);
-    if (error) return toast(msgErro(error), false);
-    toast(pagto.avancar ? `Pagamento registrado. Próximo vencimento: ${fmtData(data)}.` : 'Pagamento registrado.');
-    setPagto(null); carregar();
-  }
-
-  const editar = (c) => setForm({ ...VAZIO, ...c, email: c.email || '', cidade: c.cidade || '', notas: c.notas || '', plano_id: c.plano_id || '', valor: String(c.valor).replace('.', ','), whatsapp: c.whatsapp.startsWith('55') ? fmtTelefone(c.whatsapp) : `+${c.whatsapp}` });
-
-  function abrirCobranca(c) {
-    setMenu(null);
-    const g = gatilhoDoCliente(c.vencimento, hoje);
-    const modelo = modelos.find((m) => m.gatilho === g);
-    setCobrar({ c, gatilho: g, texto: montaMensagem(modelo?.texto || '', { cliente: c, plano: planoMap.get(c.plano_id), perfil, hoje, envio: true }) });
-  }
-  async function enviarCobranca(e) {
-    e.preventDefault(); setSalvando(true);
-    const r = await fetch('/api/cobrar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerId: cobrar.c.id, texto: cobrar.texto }) });
+  const texto = (m, c, extra = {}) => montaMensagem(m?.texto || '', { cliente: c, plano: planoMap.get(c.plano_id), perfil, hoje, envio: true, servidor: servMap.get(c.servidor_id), ...extra });
+  async function enviar(c, msg, gatilho = 'modelo') {
+    const r = await fetch('/api/cobrar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerId: c.id, texto: msg, gatilho }) });
     const j = await r.json().catch(() => ({}));
-    setSalvando(false);
-    if (!r.ok) return toast(j.erro || 'Não foi possível enviar.', false);
-    toast(`Mensagem enviada para ${cobrar.c.nome}.`); setCobrar(null);
+    if (!r.ok) { toast(j.erro || 'Não foi possível enviar.', false); return false; }
+    toast(`Mensagem enviada para ${c.nome}.`); return true;
+  }
+  /** Botão de WhatsApp: modelo do plano (abre pré-visualização) */
+  function msgDoPlano(c) {
+    const m = modeloMap.get(planoMap.get(c.plano_id)?.modelo_id) || modelos.find((x) => x.tipo === 'cobranca');
+    if (!m) return toast('Crie um modelo de mensagem em WhatsApp › Modelos.', false);
+    setEnvio({ c, titulo: `Mensagem do plano · ${m.nome}`, texto: texto(m, c), gatilho: 'modelo' });
+  }
+  /** Botão FAST: envia na hora o modelo marcado como FAST */
+  async function msgFast(c) {
+    if (!fast) return toast('Marque um modelo como FAST em WhatsApp › Modelos.', false);
+    setEnviandoFast(c.id); await enviar(c, texto(fast, c)); setEnviandoFast('');
+  }
+  function cobranca(c) {
+    const g = gatilhoDoCliente(c.vencimento, hoje);
+    const m = modelosAuto.find((x) => x.gatilho === g);
+    setEnvio({ c, titulo: `Enviar cobrança · ${GATILHOS[g].nome}`, texto: texto(m, c), gatilho: 'manual' });
   }
 
   function exportar() {
     const cel = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const linhas = [['Nome', 'WhatsApp', 'E-mail', 'Cidade', 'Plano', 'Valor', 'Vencimento', 'Situação', 'Notificar', 'Notas'],
-      ...filtrados.map((c) => [c.nome, c.whatsapp, c.email, c.cidade, planoMap.get(c.plano_id)?.nome || '', Number(c.valor).toFixed(2).replace('.', ','), fmtData(c.vencimento), statusCliente(c, hoje), c.notificar ? 'Sim' : 'Não', c.notas])];
-    const blob = new Blob(['﻿' + linhas.map((l) => l.map(cel).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `clientes_${hoje}.csv`; a.click();
+    const linhas = [['Nome', 'Usuário', 'WhatsApp', 'E-mail', 'Servidor', 'Plano', 'Telas', 'Valor', 'Vencimento', 'Situação', 'MAC/ID externo', 'Cidade', 'Notificar', 'Alerta', 'Notas'],
+      ...filtrados.map((c) => [c.nome, c.usuario, c.whatsapp, c.email, servMap.get(c.servidor_id)?.nome || '', planoMap.get(c.plano_id)?.nome || '', c.telas, Number(c.valor).toFixed(2).replace('.', ','), fmtData(c.vencimento), statusCliente(c, hoje), c.mac, c.cidade, c.notificar ? 'Sim' : 'Não', c.alerta, c.notas])];
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + linhas.map((l) => l.map(cel).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' })); a.download = `clientes_${hoje}.csv`; a.click();
   }
+  const copiar = async (t) => { try { await navigator.clipboard.writeText(t); toast('Copiado.'); } catch { toast('Não foi possível copiar.', false); } };
 
   if (!lista) return <Carregando />;
+
+  const BotoesMsg = ({ c }) => (
+    <div className="flex items-center gap-1">
+      <button title="Envia a mensagem no modelo do plano" aria-label={`Mensagem do plano para ${c.nome}`} onClick={() => msgDoPlano(c)} disabled={bloqueado}
+        className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-500 text-white transition hover:bg-emerald-600 disabled:opacity-40"><MessageCircle className="h-4 w-4" /></button>
+      <button title={fast ? `Envia na hora o modelo FAST (${fast.nome})` : 'Nenhum modelo marcado como FAST'} aria-label={`Mensagem FAST para ${c.nome}`} onClick={() => msgFast(c)} disabled={bloqueado || enviandoFast === c.id}
+        className="inline-flex h-9 items-center gap-1 rounded-lg bg-brand-navy px-2 text-[11px] font-bold text-white transition hover:bg-[#12305a] disabled:opacity-40 dark:bg-brand-cyan dark:text-brand-navy"><Zap className={`h-3.5 w-3.5 ${enviandoFast === c.id ? 'animate-pulse' : ''}`} />FAST</button>
+    </div>
+  );
+  const Toggle = ({ c }) => (
+    <button role="switch" aria-checked={c.status !== 'desativado'} title={c.status === 'desativado' ? 'Reativar cliente' : 'Desativar cliente'} onClick={() => alternarStatus(c)}
+      className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition ${c.status !== 'desativado' ? 'bg-brand-cyan' : 'bg-slate-300 dark:bg-night-line'}`}>
+      <span className={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${c.status !== 'desativado' ? 'translate-x-4' : ''}`} />
+    </button>
+  );
+  const Ponto = ({ c }) => { const s = servMap.get(c.servidor_id); return <span title={s ? `Servidor ${s.nome}` : 'Sem servidor'} className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white dark:ring-night-card" style={{ background: s?.cor || '#CBD5E1' }} />; };
+  const Plano = ({ c }) => <span className="inline-flex items-center gap-1.5">{planoMap.get(c.plano_id)?.nome || <span className="text-slate-400">—</span>}<span className="inline-flex items-center gap-0.5 text-xs text-slate-500" title={`${c.telas} tela(s)`}><Monitor className="h-3 w-3" />{c.telas}</span></span>;
 
   return (
     <>
       <Titulo titulo="Clientes" sub={uso?.limite != null ? `${int(uso.usados)} de ${int(uso.limite)} clientes ativos no plano ${uso.plano_nome}` : `${int(uso?.usados || 0)} clientes ativos · plano ${uso?.plano_nome || ''}`}>
+        <Btn onClick={() => setVerArea(true)}><Globe className="h-4 w-4" />Área do cliente</Btn>
         <Btn onClick={exportar} disabled={!filtrados.length}><FileSpreadsheet className="h-4 w-4" />Exportar</Btn>
         <Btn onClick={() => setImportar(true)} disabled={bloqueado}><Upload className="h-4 w-4" />Importar</Btn>
-        <Btn variante="primario" onClick={() => setForm({ ...VAZIO, vencimento: addMonths(hoje, 1) })} disabled={noLimite || bloqueado}><UserPlus className="h-4 w-4" />Novo cliente</Btn>
+        <Btn variante="primario" onClick={novo} disabled={noLimite || bloqueado}><UserPlus className="h-4 w-4" />Adicionar novo</Btn>
       </Titulo>
 
       {noLimite && !bloqueado && (
@@ -170,100 +194,93 @@ export default function Clientes() {
           {ABAS.map(([k, r]) => (
             <button key={k} role="tab" aria-selected={aba === k} onClick={() => setAba(k)}
               className={`flex shrink-0 items-center gap-2 border-b-2 px-3 pb-2.5 pt-1 text-sm font-semibold transition ${aba === k ? 'border-brand-cyan text-brand-navy dark:text-white' : 'border-transparent text-slate-500 hover:text-brand-navy dark:hover:text-white'}`}>
-              {r}<span className={`rounded-full px-1.5 text-[11px] ${k === 'inadimplentes' && cont[k] ? 'bg-rose-500/15 text-rose-600' : k === 'hoje' && cont[k] ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' : 'bg-slate-500/10'}`}>{cont[k]}</span>
+              {r}<span className={`rounded-full px-1.5 text-[11px] ${(k === 'inadimplentes' || k === 'alerta') && cont[k] ? 'bg-rose-500/15 text-rose-600' : k === 'hoje' && cont[k] ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' : 'bg-slate-500/10'}`}>{cont[k]}</span>
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-3 p-3">
+        <div className="flex flex-wrap items-end gap-3 p-3">
           <label className="relative min-w-[220px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nome, WhatsApp, e-mail, cidade ou plano" className="campo pl-9" />
+            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar nome, usuário, WhatsApp, MAC, plano ou notas" className="campo pl-9" />
           </label>
+          <Selecao value={ordem} onChange={(e) => setOrdem(e.target.value)} opcoes={ORDENS} className="w-56" />
           <label className="flex items-center gap-2 text-sm text-slate-500">Mostrar
             <select value={porPag} onChange={(e) => setPorPag(+e.target.value)} className="campo w-20">{[10, 25, 50, 100].map((n) => <option key={n}>{n}</option>)}</select>
           </label>
         </div>
+        {servidores.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 px-3 pb-3">
+            <span className="mr-1 text-xs font-semibold text-slate-500">Servidores:</span>
+            {servidores.map((s) => (
+              <button key={s.id} onClick={() => setServFiltro(servFiltro === s.id ? '' : s.id)} style={{ background: s.cor }}
+                className={`inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-bold text-white shadow-sm transition [text-shadow:0_1px_1px_rgba(0,0,0,.35)] ${servFiltro && servFiltro !== s.id ? 'opacity-35' : ''} ${servFiltro === s.id ? 'ring-2 ring-offset-2 ring-brand-cyan dark:ring-offset-night-card' : ''}`}>
+                {s.nome}<span className="rounded bg-black/20 px-1 text-[10px]">{contServ[s.id] || 0}</span>
+              </button>
+            ))}
+            {contServ._ > 0 && <button onClick={() => setServFiltro(servFiltro === '_' ? '' : '_')} className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs font-semibold text-slate-500 dark:border-night-line ${servFiltro === '_' ? 'ring-2 ring-brand-cyan' : ''}`}>Sem servidor<span className="text-[10px]">{contServ._}</span></button>}
+          </div>
+        )}
 
         {!filtrados.length ? (
           <Vazio msg={lista.length ? 'Nenhum cliente encontrado com esses filtros.' : 'Nenhum cliente cadastrado ainda.'}>
-            {!lista.length && <Btn variante="primario" onClick={() => setForm({ ...VAZIO, vencimento: addMonths(hoje, 1) })} disabled={bloqueado}><UserPlus className="h-4 w-4" />Cadastrar o primeiro</Btn>}
+            {!lista.length && <Btn variante="primario" onClick={novo} disabled={bloqueado}><UserPlus className="h-4 w-4" />Cadastrar o primeiro</Btn>}
           </Vazio>
         ) : (
           <>
-          {/* celular: cartões */}
-          <ul className="divide-y divide-line md:hidden dark:divide-night-line">
-            {pagina.map((c) => {
-              const st = statusCliente(c, hoje); const d = daysBetween(hoje, c.vencimento);
-              return (
-                <li key={c.id} className={`px-4 py-3 ${st === 'Desativado' ? 'opacity-60' : ''}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0"><div className="truncate font-semibold">{c.nome}</div><div className="text-xs text-slate-500">{fmtTelefone(c.whatsapp)} · {planoMap.get(c.plano_id)?.nome || 'sem plano'}</div></div>
-                    <div className="text-right"><div className="font-semibold tabular-nums">{brl(c.valor)}</div><div className="text-xs tabular-nums text-slate-500">{fmtData(c.vencimento)}</div></div>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    {st === 'Desativado' ? <Badge>Desativado</Badge> : d === 0 ? <Badge tom="ambar">Vence hoje</Badge> : d < 0 ? <Badge tom="vermelho">Atrasado há {-d} {d === -1 ? 'dia' : 'dias'}</Badge> : <Badge tom={d <= 7 ? 'ciano' : 'verde'}>Em {d} {d === 1 ? 'dia' : 'dias'}</Badge>}
-                    <div className="flex gap-1">
-                      <Acao titulo="Registrar pagamento" onClick={() => setPagto({ c, valor: String(c.valor).replace('.', ','), forma: 'Pix', data: hoje, avancar: true })}><BadgeCheck className="h-4 w-4 text-emerald-600" /></Acao>
-                      <Acao titulo="Cobrar pelo WhatsApp" onClick={() => abrirCobranca(c)} disabled={bloqueado}><Send className="h-4 w-4 text-brand-cyan" /></Acao>
-                      <Acao titulo="Editar" onClick={() => editar(c)}><Pencil className="h-4 w-4" /></Acao>
-                      <Acao titulo={c.status === 'desativado' ? 'Reativar' : 'Desativar'} onClick={() => alternarStatus(c)}><Power className="h-4 w-4" /></Acao>
+            <ul className="divide-y divide-line border-t border-line md:hidden dark:divide-night-line dark:border-night-line">
+              {pagina.map((c) => (
+                <li key={c.id} className={`px-4 py-3 ${c.status === 'desativado' ? 'opacity-60' : ''}`}>
+                  <div className="flex items-start gap-2.5">
+                    <div className="pt-1"><Toggle c={c} /></div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 font-semibold"><Ponto c={c} /><span className="truncate">{c.nome}</span>{c.alerta && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-500" />}</div>
+                      <div className="truncate text-xs text-slate-500">{c.usuario ? `${c.usuario} · ` : ''}{fmtTelefone(c.whatsapp)}</div>
+                      <div className="mt-1 text-xs"><Plano c={c} /> · {brl(c.valor)}</div>
                     </div>
+                    <SeloVencimento c={c} hoje={hoje} />
+                  </div>
+                  <div className="mt-2 flex items-center justify-end gap-2">
+                    <Btn className="h-9" onClick={() => setOpcoes(c)}>Opções</Btn><BotoesMsg c={c} />
                   </div>
                 </li>
-              );
-            })}
-          </ul>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[880px] text-sm">
-              <thead>
-                <tr className="border-y border-line bg-slate-50 text-left text-xs font-semibold text-slate-500 dark:border-night-line dark:bg-night-soft/60 dark:text-slate-400">
-                  <th className="px-4 py-2.5">Cliente</th><th className="px-4 py-2.5">WhatsApp</th><th className="px-4 py-2.5">Plano</th>
-                  <th className="px-4 py-2.5 text-right">Valor</th><th className="px-4 py-2.5">Vencimento</th><th className="px-4 py-2.5 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line dark:divide-night-line">
-                {pagina.map((c) => {
-                  const st = statusCliente(c, hoje); const d = daysBetween(hoje, c.vencimento);
-                  return (
-                    <tr key={c.id} className={`transition hover:bg-slate-50 dark:hover:bg-night-soft/50 ${st === 'Desativado' ? 'opacity-60' : ''}`}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 font-semibold">{c.nome}{!c.notificar && <BellOff className="h-3.5 w-3.5 text-slate-400" aria-label="Sem notificação" />}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">{[c.cidade, c.email].filter(Boolean).join(' · ') || '—'}</div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums">{fmtTelefone(c.whatsapp)}</td>
-                      <td className="px-4 py-3">{planoMap.get(c.plano_id)?.nome || <span className="text-slate-400">—</span>}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums">{brl(c.valor)}</td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <div className="tabular-nums">{fmtData(c.vencimento)}</div>
-                        {st === 'Desativado' ? <Badge>Desativado</Badge> : d === 0 ? <Badge tom="ambar">Vence hoje</Badge> : d < 0 ? <Badge tom="vermelho">Atrasado há {-d} {d === -1 ? 'dia' : 'dias'}</Badge> : <Badge tom={d <= 7 ? 'ciano' : 'verde'}>Em {d} {d === 1 ? 'dia' : 'dias'}</Badge>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <Acao titulo="Registrar pagamento" onClick={() => setPagto({ c, valor: String(c.valor).replace('.', ','), forma: 'Pix', data: hoje, avancar: true })}><BadgeCheck className="h-4 w-4 text-emerald-600" /></Acao>
-                          <Acao titulo="Cobrar pelo WhatsApp" onClick={() => abrirCobranca(c)} disabled={bloqueado}><Send className="h-4 w-4 text-brand-cyan" /></Acao>
-                          <Acao titulo="Editar" onClick={() => editar(c)}><Pencil className="h-4 w-4" /></Acao>
-                          <div className="relative">
-                            <Acao titulo="Mais opções" onClick={() => setMenu(menu === c.id ? null : c.id)}><MoreHorizontal className="h-4 w-4" /></Acao>
-                            {menu === c.id && (
-                              <div className="absolute right-0 z-20 mt-1 w-48 rounded-xl border border-line bg-white p-1 shadow-xl dark:border-night-line dark:bg-night-card">
-                                <button onClick={() => alternarStatus(c)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-night-soft"><Power className="h-4 w-4" />{c.status === 'desativado' ? 'Reativar' : 'Desativar'}</button>
-                                <button onClick={() => { setMenu(null); setExcluir(c); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"><Trash2 className="h-4 w-4" />Excluir</button>
-                              </div>
-                            )}
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[960px] text-sm">
+                <thead>
+                  <tr className="bg-brand-navy text-left text-xs font-semibold text-white dark:bg-[#0F2A4D]">
+                    <th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Vencimento</th><th className="px-4 py-3">WhatsApp</th><th className="px-4 py-3">Plano</th>
+                    <th className="px-4 py-3 text-right">Valor</th><th className="px-4 py-3 text-center">Opções</th><th className="px-4 py-3">Mensagem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line dark:divide-night-line">
+                  {pagina.map((c) => (
+                    <tr key={c.id} className={`transition odd:bg-slate-50/60 hover:bg-brand-cyan/5 dark:odd:bg-night-soft/30 ${c.status === 'desativado' ? 'opacity-60' : ''}`}>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <Toggle c={c} /><Ponto c={c} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 font-semibold"><span className="max-w-[240px] truncate">{c.nome}</span>{!c.notificar && <BellOff className="h-3.5 w-3.5 text-slate-400" aria-label="Sem notificação" />}{c.alerta && <AlertTriangle className="h-3.5 w-3.5 text-rose-500" aria-label="Com alerta" title={c.alerta} />}</div>
+                            <div className="max-w-[260px] truncate text-xs text-slate-500 dark:text-slate-400">{[c.usuario, servMap.get(c.servidor_id)?.nome].filter(Boolean).join(' · ') || c.cidade || '—'}</div>
                           </div>
                         </div>
                       </td>
+                      <td className="px-4 py-2.5"><SeloVencimento c={c} hoje={hoje} /></td>
+                      <td className="whitespace-nowrap px-4 py-2.5 tabular-nums"><a href={`https://wa.me/${c.whatsapp}`} target="_blank" rel="noreferrer" className="text-[#007F98] hover:underline dark:text-brand-cyan">{fmtTelefone(c.whatsapp)}</a></td>
+                      <td className="px-4 py-2.5"><Plano c={c} /></td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold tabular-nums">{brl(c.valor)}</td>
+                      <td className="px-4 py-2.5 text-center"><button onClick={() => setOpcoes(c)} className="h-9 rounded-lg bg-brand-navy px-3.5 text-sm font-semibold text-white hover:bg-[#12305a] dark:bg-white/10 dark:hover:bg-white/20">Opções</button></td>
+                      <td className="px-4 py-2.5"><BotoesMsg c={c} /></td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
         {filtrados.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3 text-sm dark:border-night-line">
-            <span className="text-slate-500">Mostrando {pag * porPag + 1} a {Math.min(filtrados.length, (pag + 1) * porPag)} de {int(filtrados.length)} clientes</span>
+            <span className="text-slate-500">Mostrando {pag * porPag + 1} até {Math.min(filtrados.length, (pag + 1) * porPag)} de {int(filtrados.length)} clientes</span>
             <div className="flex gap-2">
               <Btn onClick={() => setPag((p) => Math.max(0, p - 1))} disabled={!pag} aria-label="Página anterior"><ChevronLeft className="h-4 w-4" /></Btn>
               <Btn onClick={() => setPag((p) => Math.min(totPag - 1, p + 1))} disabled={pag >= totPag - 1} aria-label="Próxima página"><ChevronRight className="h-4 w-4" /></Btn>
@@ -271,190 +288,64 @@ export default function Clientes() {
           </div>
         )}
       </div>
-      {menu && <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} />}
 
       {/* cadastro / edição */}
-      <Modal aberto={!!form} onFechar={() => setForm(null)} titulo={form?.id ? 'Editar cliente' : 'Novo cliente'} largura="max-w-2xl"
-        rodape={<><Btn onClick={() => setForm(null)}>Cancelar</Btn><Btn variante="primario" type="submit" form="form-cliente" carregando={salvando}>{form?.id ? 'Salvar' : 'Cadastrar'}</Btn></>}>
+      <Modal aberto={!!form} onFechar={() => setForm(null)} titulo={form?.id ? 'Editar cliente' : 'Adicionar cliente'} largura="max-w-3xl"
+        rodape={<><Btn onClick={() => setForm(null)}>Fechar</Btn><Btn variante="primario" type="submit" form="form-cliente" carregando={salvando}>{form?.id ? 'Salvar' : 'Adicionar'}</Btn></>}>
         {form && (
           <form id="form-cliente" onSubmit={salvar} className="grid gap-3.5 sm:grid-cols-2">
-            <Campo rotulo="Nome *" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required autoFocus />
-            <Campo rotulo="WhatsApp com DDD *" type="tel" inputMode="tel" placeholder="(85) 99999-9999" value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} required ajuda="Número de outro país: comece com + e o código do país." />
-            <Selecao rotulo="Plano" value={form.plano_id} todos="Sem plano" opcoes={planos.map((p) => [p.id, `${p.nome} — ${brl(p.valor)}${p.ciclo_meses > 1 ? ` / ${p.ciclo_meses} meses` : '/mês'}`])}
+            <Campo rotulo="Nome *" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required autoFocus placeholder="Nome do cliente" />
+            <Campo rotulo="Usuário (login)" value={form.usuario} onChange={(e) => setForm({ ...form, usuario: e.target.value })} placeholder="Ex.: thiago1490" />
+            <Campo rotulo="WhatsApp com DDD *" type="tel" inputMode="tel" placeholder="(85) 99999-9999" value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} required ajuda="De outro país: comece com + e o código do país." />
+            <Campo rotulo="Senha da área do cliente">
+              <div className="flex gap-2">
+                <input value={form.senha_area} onChange={(e) => setForm({ ...form, senha_area: e.target.value })} className="campo" placeholder="Sem senha = sem acesso" />
+                <button type="button" title="Gerar senha" aria-label="Gerar senha" onClick={() => setForm({ ...form, senha_area: senhaAleatoria() })} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-line text-slate-500 hover:border-brand-cyan dark:border-night-line"><Dices className="h-4 w-4" /></button>
+              </div>
+            </Campo>
+            <Campo rotulo="Data de vencimento *" type="date" value={form.vencimento} onChange={(e) => setForm({ ...form, vencimento: e.target.value })} required />
+            <Selecao rotulo="Servidor" value={form.servidor_id} onChange={(e) => setForm({ ...form, servidor_id: e.target.value })} todos={servidores.length ? 'Sem servidor' : 'Nenhum servidor cadastrado'} opcoes={servidores.map((s) => [s.id, s.nome])} />
+            <Selecao rotulo="Plano" value={form.plano_id} todos="Selecionar plano" opcoes={planos.map((p) => [p.id, `${p.nome} — ${brl(p.valor)}${p.ciclo_meses > 1 ? ` / ${p.ciclo_meses} meses` : '/mês'}`])}
               onChange={(e) => { const p = planoMap.get(e.target.value); setForm({ ...form, plano_id: e.target.value, valor: p ? String(p.valor).replace('.', ',') : form.valor }); }} />
             <Campo rotulo="Valor da mensalidade (R$) *" inputMode="decimal" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} required placeholder="0,00" />
-            <Campo rotulo="Próximo vencimento *" type="date" value={form.vencimento} onChange={(e) => setForm({ ...form, vencimento: e.target.value })} required />
-            <Campo rotulo="E-mail" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <Campo rotulo="Cidade" value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
-            <div className="flex items-end pb-1"><Interruptor ligado={form.notificar} onChange={(v) => setForm({ ...form, notificar: v })} rotulo="Cobrança automática no WhatsApp" desc="Envia os lembretes configurados em WhatsApp." /></div>
+            <Selecao rotulo="Número de telas" value={form.telas} onChange={(e) => setForm({ ...form, telas: e.target.value })} opcoes={[1, 2, 3, 4, 5, 6, 8, 10].map((n) => [n, `${n} ${n === 1 ? 'tela' : 'telas'}`])} />
+            <Selecao rotulo="Notificação WhatsApp *" value={form.notificar ? 's' : 'n'} onChange={(e) => setForm({ ...form, notificar: e.target.value === 's' })} opcoes={[['s', 'Notificar via WhatsApp'], ['n', 'Não notificar via WhatsApp']]} />
+            <Campo rotulo="MAC / ID externo" value={form.mac} onChange={(e) => setForm({ ...form, mac: e.target.value })} placeholder="Opcional" />
+            <Campo rotulo="E-mail" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Opcional" />
+            <Campo rotulo="Cidade" value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} placeholder="Opcional" />
             <Campo rotulo="Notas" className="sm:col-span-2"><textarea value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} rows={3} className="campo h-auto py-2" /></Campo>
-            {!planos.length && <p className="text-xs text-slate-500 sm:col-span-2">Dica: cadastre seus planos em <Link href="/painel/planos" className="font-semibold text-[#007F98] dark:text-brand-cyan">Planos</Link> para preencher o valor automaticamente.</p>}
+            {(!planos.length || !servidores.length) && <p className="text-xs text-slate-500 sm:col-span-2">Dica: cadastre {!planos.length && <Link href="/painel/planos" className="font-semibold text-[#007F98] dark:text-brand-cyan">planos</Link>}{!planos.length && !servidores.length && ' e '}{!servidores.length && <Link href="/painel/servidores" className="font-semibold text-[#007F98] dark:text-brand-cyan">servidores</Link>} para escolher aqui.</p>}
           </form>
         )}
       </Modal>
 
-      {/* pagamento */}
-      <Modal aberto={!!pagto} onFechar={() => setPagto(null)} titulo="Registrar pagamento" sub={pagto?.c.nome}
-        rodape={<><Btn onClick={() => setPagto(null)}>Cancelar</Btn><Btn variante="primario" type="submit" form="form-pagto" carregando={salvando}>Registrar</Btn></>}>
-        {pagto && (
-          <form id="form-pagto" onSubmit={registrarPagamento} className="grid gap-3.5 sm:grid-cols-2">
-            <Campo rotulo="Valor recebido (R$)" inputMode="decimal" value={pagto.valor} onChange={(e) => setPagto({ ...pagto, valor: e.target.value })} required />
-            <Selecao rotulo="Forma de pagamento" value={pagto.forma} onChange={(e) => setPagto({ ...pagto, forma: e.target.value })} opcoes={FORMAS} />
-            <Campo rotulo="Data do pagamento" type="date" value={pagto.data} onChange={(e) => setPagto({ ...pagto, data: e.target.value })} required />
-            <div className="flex items-end pb-1">
-              <Interruptor ligado={pagto.avancar} onChange={(v) => setPagto({ ...pagto, avancar: v })} rotulo="Renovar vencimento"
-                desc={`De ${fmtData(pagto.c.vencimento)} para ${fmtData(addMonths(pagto.c.vencimento, planoMap.get(pagto.c.plano_id)?.ciclo_meses || 1))}`} />
-            </div>
-            <p className="text-xs text-slate-500 sm:col-span-2">O valor entra no Financeiro como ganho confirmado da categoria Mensalidade.</p>
-          </form>
-        )}
+      {/* pré-visualização de envio */}
+      <Modal aberto={!!envio} onFechar={() => setEnvio(null)} titulo={envio?.titulo} sub={envio && `${envio.c.nome} · ${fmtTelefone(envio.c.whatsapp)}`}
+        rodape={<><Btn onClick={() => setEnvio(null)}>Cancelar</Btn><Btn variante="primario" carregando={salvando} onClick={async () => { setSalvando(true); const ok = await enviar(envio.c, envio.texto, envio.gatilho); setSalvando(false); if (ok) setEnvio(null); }}><Send className="h-4 w-4" />Enviar agora</Btn></>}>
+        {envio && <><textarea value={envio.texto} onChange={(e) => setEnvio({ ...envio, texto: e.target.value })} rows={10} className="campo h-auto py-2" /><p className="mt-2 text-xs text-slate-500">Sai pelo WhatsApp conectado em <Link href="/painel/whatsapp" className="font-semibold">WhatsApp</Link>. Dá para editar antes de enviar.</p></>}
       </Modal>
 
-      {/* cobrança manual */}
-      <Modal aberto={!!cobrar} onFechar={() => setCobrar(null)} titulo="Cobrar pelo WhatsApp" sub={cobrar && `${cobrar.c.nome} · ${fmtTelefone(cobrar.c.whatsapp)} · modelo "${GATILHOS[cobrar.gatilho].nome}"`}
-        rodape={<><Btn onClick={() => setCobrar(null)}>Cancelar</Btn><Btn variante="primario" type="submit" form="form-cobrar" carregando={salvando}><Send className="h-4 w-4" />Enviar agora</Btn></>}>
-        {cobrar && (
-          <form id="form-cobrar" onSubmit={enviarCobranca}>
-            <textarea value={cobrar.texto} onChange={(e) => setCobrar({ ...cobrar, texto: e.target.value })} rows={9} className="campo h-auto py-2 font-[inherit]" required />
-            <p className="mt-2 text-xs text-slate-500">A mensagem sai do WhatsApp conectado em <Link href="/painel/whatsapp" className="font-semibold">WhatsApp</Link>. Você pode editar o texto antes de enviar.</p>
-          </form>
-        )}
+      {/* área do cliente */}
+      <Modal aberto={verArea} onFechar={() => setVerArea(false)} titulo="Área do cliente" sub="Página onde cada cliente vê o vencimento, as faturas e o Pix para pagar.">
+        <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 dark:bg-night-soft">
+          <div className="min-w-0 flex-1"><div className="text-xs text-slate-500">Link da sua área do cliente</div><div className="truncate font-semibold">{link}</div></div>
+          <Btn onClick={() => copiar(link)}><Copy className="h-4 w-4" />Copiar</Btn>
+        </div>
+        <ul className="mt-4 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+          <li>• O cliente entra com o <b>usuário</b> (ou o WhatsApp) e a <b>senha da área do cliente</b> do cadastro.</li>
+          <li>• Clientes sem senha cadastrada não conseguem entrar.</li>
+          <li>• Use a variável <code className="rounded bg-slate-100 px-1 dark:bg-night-soft">{'{link_area}'}</code> nas mensagens para mandar o link, e <code className="rounded bg-slate-100 px-1 dark:bg-night-soft">{'{usuario}'}</code>/<code className="rounded bg-slate-100 px-1 dark:bg-night-soft">{'{senha}'}</code> para mandar o acesso.</li>
+          <li>• {int(lista.filter((c) => c.senha_area && c.status !== 'desativado').length)} de {int(lista.filter((c) => c.status !== 'desativado').length)} clientes ativos têm senha.</li>
+        </ul>
+        <a href={link} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#007F98] dark:text-brand-cyan"><KeyRound className="h-4 w-4" />Abrir a área do cliente</a>
       </Modal>
 
-      <Modal aberto={!!excluir} onFechar={() => setExcluir(null)} titulo="Excluir cliente?"
-        rodape={<><Btn onClick={() => setExcluir(null)}>Cancelar</Btn><Btn variante="perigo" onClick={apagar}><Trash2 className="h-4 w-4" />Excluir</Btn></>}>
-        <p className="text-sm">O cadastro de <b>{excluir?.nome}</b> e o histórico de mensagens dele serão apagados. Os pagamentos continuam no Financeiro, sem o vínculo com o cliente. <b>Não dá para desfazer.</b> Se a ideia é só parar de cobrar, use <i>Desativar</i>.</p>
-      </Modal>
-
-      {importar && <Importar onFechar={() => setImportar(false)} planos={planos} existentes={lista} sb={sb} aoConcluir={() => { carregar(); recarregar(); }} hoje={hoje} />}
+      {opcoes && (
+        <OpcoesCliente c={opcoes} hoje={hoje} perfil={perfil} sb={sb} plano={planoMap.get(opcoes.plano_id)} servidor={servMap.get(opcoes.servidor_id)} modelos={modelos} bloqueado={bloqueado}
+          onFechar={() => setOpcoes(null)} onEditar={() => { editar(opcoes); setOpcoes(null); }} onCobranca={() => cobranca(opcoes)} onMudou={() => { carregar(); recarregar(); }}
+          enviar={enviar} texto={texto} />
+      )}
+      {importar && <ImportarClientes onFechar={() => setImportar(false)} planos={planos} servidores={servidores} existentes={lista} sb={sb} aoConcluir={() => { carregar(); recarregar(); }} hoje={hoje} />}
     </>
-  );
-}
-
-const Acao = ({ titulo, children, ...p }) => (
-  <button title={titulo} aria-label={titulo} {...p} className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-night-soft">{children}</button>
-);
-
-// ---------------- importação de planilha (formato livre ou exportação do Gestor Lite)
-const ALIAS = {
-  nome: ['nome', 'cliente', 'nomecliente', 'nomedocliente', 'name', 'razaosocial'],
-  whatsapp: ['whatsapp', 'telefone', 'celular', 'fone', 'phone', 'contato', 'numero', 'whats', 'telefonewhatsapp', 'telefonewhatsappcomddi'],
-  email: ['email', 'emaildocliente', 'mail'],
-  cidade: ['cidade', 'city', 'municipio'],
-  plano: ['plano', 'produto', 'servico', 'pacote', 'categoria', 'idcategoria', 'iddacategoria', 'iddacategorianumero'],
-  valor: ['valor', 'mensalidade', 'preco', 'valormensal'],
-  vencimento: ['vencimento', 'datavencimento', 'proximovencimento', 'expira', 'expiraem', 'expiracao', 'validade'],
-  notas: ['notas', 'observacao', 'obs', 'observacoes', 'qualquerinformacaodocliente'],
-  senha: ['senha', 'senhadocliente', 'password'],
-  externo: ['identificadorexterno', 'idexterno', 'mac', 'macouqualquercoisa'],
-};
-function dataPlanilha(v) {
-  if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
-  if (typeof v === 'number' && v > 20000) return new Date(Date.UTC(1899, 11, 30) + v * 864e5).toISOString().slice(0, 10);
-  const s = String(v || '').trim(); let m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
-  if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[0] : null;
-}
-const numPlanilha = (v) => { if (typeof v === 'number') return v; let s = String(v || '').replace(/[^\d.,-]/g, ''); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); return Number(s) || 0; };
-const txt = (v) => String(v ?? '').trim();
-/** Nome do plano a partir do valor da coluna: códigos numéricos (Gestor Lite) viram "Categoria 9949"; 0 = sem plano. */
-const nomePlano = (v) => { const s = txt(v); if (!s || s === '0') return ''; return /^\d+$/.test(s) ? `Categoria ${s}` : s; };
-
-/** Acha a linha de cabeçalho (o Gestor Lite tem linhas de instrução antes dela). */
-function lerTabela(ws) {
-  const linhas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
-  const idx = linhas.slice(0, 20).findIndex((l) => { const ks = l.map(key); return ALIAS.nome.some((a) => ks.includes(a)) && ALIAS.whatsapp.some((a) => ks.includes(a)); });
-  if (idx < 0) return null;
-  const cab = linhas[idx].map((c) => key(c));
-  const mapa = {};
-  for (const [campo, nomes] of Object.entries(ALIAS)) { const i = cab.findIndex((c) => nomes.includes(c)); if (i >= 0) mapa[campo] = i; }
-  const corpo = linhas.slice(idx + 1).filter((l) => l.some((c) => txt(c)));
-  return { mapa, corpo };
-}
-
-function Importar({ onFechar, planos, existentes, sb, aoConcluir, hoje }) {
-  const toast = useToast();
-  const [linhas, setLinhas] = useState(null);
-  const [info, setInfo] = useState(null);
-  const [comSenha, setComSenha] = useState(true);
-  const [prog, setProg] = useState(null);
-
-  async function ler(file) {
-    try {
-      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
-      const t = lerTabela(wb.Sheets[wb.SheetNames[0]]);
-      if (!t) return toast('Não achei as colunas "nome" e "telefone/whatsapp" na planilha.', false);
-      const { mapa, corpo } = t; const col = (r, c) => (mapa[c] !== undefined ? r[mapa[c]] : '');
-      const jaTem = new Set((existentes || []).map((c) => c.whatsapp));
-      const vistos = new Set(); let duplicados = 0, invalidos = 0;
-      const lista = [];
-      for (const r of corpo) {
-        const nome = txt(col(r, 'nome')); const whatsapp = normalizaTelefone(col(r, 'whatsapp'));
-        if (!nome || whatsapp.length < 10) { invalidos++; continue; }
-        if (jaTem.has(whatsapp) || vistos.has(whatsapp)) { duplicados++; continue; }
-        vistos.add(whatsapp);
-        const emailBruto = txt(col(r, 'email'));
-        // no Gestor Lite, a coluna "email" costuma trazer o nome do cliente e "nome" o login: usa os dois
-        const apelido = emailBruto && !emailBruto.includes('@') ? emailBruto : '';
-        const nomeFinal = apelido && norm(apelido) !== norm(nome) ? `${apelido} (${nome})` : nome;
-        lista.push({
-          nome: nomeFinal, whatsapp, plano: nomePlano(col(r, 'plano')),
-          email: emailBruto.includes('@') ? emailBruto : null,
-          cidade: txt(col(r, 'cidade')) || null, valor: mapa.valor !== undefined ? numPlanilha(col(r, 'valor')) : null,
-          vencimento: dataPlanilha(col(r, 'vencimento')) || addMonths(hoje, 1),
-          notasOrig: txt(col(r, 'notas')), senha: txt(col(r, 'senha')), externo: txt(col(r, 'externo')),
-        });
-      }
-      const existentesNomes = new Set(planos.map((p) => key(p.nome)));
-      const novosPlanos = [...new Set(lista.map((l) => l.plano).filter((p) => p && !existentesNomes.has(key(p))))];
-      setLinhas(lista); setInfo({ duplicados, invalidos, novosPlanos, temSenha: lista.some((l) => l.senha), gestorLite: mapa.senha !== undefined || mapa.externo !== undefined });
-    } catch { toast('Não consegui ler esse arquivo.', false); }
-  }
-
-  async function importar() {
-    setProg('preparando planos');
-    // cria os planos que ainda não existem (valor 0: ajuste depois em Planos)
-    const porNome = new Map(planos.map((p) => [key(p.nome), p]));
-    for (const nome of info.novosPlanos) {
-      const { data, error } = await sb.from('client_plans').insert({ nome, valor: 0, ciclo_meses: 1 }).select().single();
-      if (error) { setProg(null); return toast(msgErro(error), false); }
-      porNome.set(key(nome), data);
-    }
-    let ok = 0, erro = null;
-    for (let i = 0; i < linhas.length; i++) {
-      setProg(`${i + 1} de ${linhas.length}`);
-      const l = linhas[i]; const pl = l.plano ? porNome.get(key(l.plano)) : null;
-      const notas = [l.notasOrig, comSenha && l.senha && `Senha: ${l.senha}`, l.externo && `ID externo: ${l.externo}`].filter(Boolean).join('\n');
-      const { error } = await sb.from('customers').insert({
-        nome: l.nome, whatsapp: l.whatsapp, email: l.email, cidade: l.cidade, plano_id: pl?.id || null,
-        valor: l.valor ?? Number(pl?.valor || 0), vencimento: l.vencimento, notas: notas || null,
-      });
-      if (error) { erro = msgErro(error); if (/limite|bloquead/i.test(erro)) break; } else ok++;
-    }
-    setProg(null); aoConcluir();
-    toast(erro ? `${ok} clientes importados. Parou em: ${erro}` : `${ok} clientes importados.`, !erro);
-    onFechar();
-  }
-
-  return (
-    <Modal aberto onFechar={onFechar} titulo="Importar clientes" sub="Planilha Excel ou CSV (primeira aba). Aceita a exportação de clientes do Gestor Lite." largura="max-w-3xl"
-      rodape={<><Btn onClick={onFechar}>Cancelar</Btn><Btn variante="primario" onClick={importar} disabled={!linhas?.length} carregando={!!prog}>{prog ? `Importando ${prog}` : `Importar ${linhas?.length || ''} clientes`}</Btn></>}>
-      <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => e.target.files[0] && ler(e.target.files[0])} className="block w-full text-sm file:mr-3 file:h-10 file:rounded-lg file:border-0 file:bg-brand-navy file:px-4 file:font-semibold file:text-white dark:file:bg-brand-cyan dark:file:text-brand-navy" />
-      <p className="mt-3 text-xs text-slate-500">Colunas reconhecidas: <b>nome</b> e <b>telefone/whatsapp</b> (obrigatórias), e-mail, cidade, plano ou categoria, valor, vencimento (dd/mm/aaaa), notas, senha e identificador externo. Sem vencimento, fica para daqui a 1 mês.</p>
-      {info && (
-        <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 text-sm dark:bg-night-soft">
-          <div><b>{linhas.length}</b> clientes prontos para importar{info.gestorLite && ' (formato Gestor Lite)'}.{info.duplicados > 0 && ` ${info.duplicados} já cadastrados ou repetidos serão pulados.`}{info.invalidos > 0 && ` ${info.invalidos} linhas sem nome ou telefone válido serão ignoradas.`}</div>
-          {info.novosPlanos.length > 0 && <div>Planos que serão criados com valor R$ 0 (ajuste depois em <b>Planos</b>): {info.novosPlanos.join(', ')}.</div>}
-          {info.temSenha && <Interruptor ligado={comSenha} onChange={setComSenha} rotulo="Guardar a senha de cada cliente nas notas" desc="Fica em texto aberto no cadastro do cliente." />}
-        </div>
-      )}
-      {linhas && (
-        <div className="mt-4 max-h-64 overflow-auto rounded-lg border border-line dark:border-night-line">
-          <table className="w-full text-xs"><thead><tr className="bg-slate-50 text-left dark:bg-night-soft"><th className="px-2 py-1.5">Nome</th><th className="px-2 py-1.5">WhatsApp</th><th className="px-2 py-1.5">Plano</th><th className="px-2 py-1.5">Vencimento</th></tr></thead>
-            <tbody>{linhas.slice(0, 50).map((l, i) => <tr key={i} className="border-t border-line dark:border-night-line"><td className="px-2 py-1">{l.nome}</td><td className="px-2 py-1">{fmtTelefone(l.whatsapp)}</td><td className="px-2 py-1">{l.plano || '—'}</td><td className="px-2 py-1">{fmtData(l.vencimento)}</td></tr>)}</tbody></table>
-          {linhas.length > 50 && <p className="px-2 py-1.5 text-xs text-slate-500">… e mais {linhas.length - 50}</p>}
-        </div>
-      )}
-    </Modal>
   );
 }

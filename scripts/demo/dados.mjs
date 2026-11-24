@@ -48,6 +48,11 @@ export async function semear(db) {
     for (const [nome, valor, ciclo] of [['Mensal', 99.9, 1], ['Premium', 149.9, 1], ['Trimestral', 269.9, 3]]) {
       meus.push((await q(`insert into public.client_plans (owner_id, nome, valor, ciclo_meses) values ($1, $2, $3, $4) returning *`, [c.id, nome, valor, ciclo])).rows[0]);
     }
+    // ---- servidores
+    const servs = [];
+    for (const [nome, cor] of [['ZEUS', '#22C55E'], ['UNIPLAY', '#7C3AED'], ['UNITV', '#7C2D12'], ['IMPERIAL', '#A3A3A3'], ['BLACK TV', '#111111']].slice(0, c.clientes > 10 ? 5 : 2)) {
+      servs.push((await q(`insert into public.servers (owner_id, nome, cor) values ($1, $2, $3) returning id`, [c.id, nome, cor])).rows[0].id);
+    }
     // ---- clientes e pagamentos
     for (let i = 0; i < c.clientes; i++) {
       const pl = r() < 0.55 ? meus[0] : r() < 0.7 ? meus[1] : meus[2];
@@ -61,10 +66,15 @@ export async function semear(db) {
       if (i < 2) venc = hoje;
       if (i === 2) venc = dia(hoje, 3);
       const tel = `55859${String(8000 + Math.floor(r() * 1999)).padStart(4, '0')}${String(Math.floor(r() * 10000)).padStart(4, '0')}`;
-      const cli = (await q(`insert into public.customers (owner_id, nome, whatsapp, email, cidade, plano_id, valor, vencimento, status, notificar, created_at)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::date + time '10:00') returning id`,
-        [c.id, nome, tel, r() < 0.5 ? `${nome.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')}@email.com` : null, pick(CIDADES), pl.id, pl.valor, venc,
-          desativado ? 'desativado' : 'ativo', r() > 0.07, cadastro])).rows[0];
+      const base = nome.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const usuario = i === 0 && c.id === USUARIOS_DEMO.assinante.id ? 'cliente.demo' : `${base}${1000 + Math.floor(r() * 9000)}`;
+      const senha = i === 0 && c.id === USUARIOS_DEMO.assinante.id ? '1234' : Math.random().toString(36).slice(2, 8);
+      const cli = (await q(`insert into public.customers (owner_id, nome, whatsapp, email, cidade, plano_id, valor, vencimento, status, notificar, created_at, usuario, senha_area, telas, servidor_id, mac, alerta)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::date + time '10:00', $12, $13, $14, $15, $16, $17) returning id`,
+        [c.id, nome, tel, r() < 0.5 ? `${base}@email.com` : null, pick(CIDADES), pl.id, pl.valor, venc,
+          desativado ? 'desativado' : 'ativo', r() > 0.07, cadastro, usuario, senha, r() < 0.8 ? 1 : 2, pick(servs),
+          r() < 0.5 ? Array.from({ length: 6 }, () => Math.floor(r() * 256).toString(16).padStart(2, '0')).join(':') : null,
+          i === 4 ? 'Pediu para pagar sempre no dia 15.' : null])).rows[0];
       // histórico de mensalidades pagas desde o cadastro até o último vencimento passado
       let v = venc; const pagos = [];
       while (true) { v = mes(v, -pl.ciclo_meses); if (v < cadastro) break; pagos.push(v); }

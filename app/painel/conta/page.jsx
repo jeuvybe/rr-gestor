@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Check, Crown, Copy, MessageCircle, Save, KeyRound } from 'lucide-react';
+import { Check, Crown, Copy, MessageCircle, Save, KeyRound, Globe } from 'lucide-react';
+import { linkArea } from '@/lib/cobranca';
 import { usePainel, Titulo } from '@/components/AppShell';
 import { Btn, Campo, Modal, Badge, useToast } from '@/components/ui';
 import { supabaseBrowser } from '@/lib/supabase/client';
@@ -70,6 +71,12 @@ export default function Conta() {
             <div className="grid gap-1 text-sm text-slate-500 dark:text-slate-400">{perfil.email && <span>E-mail de acesso: <b className="text-brand-navy dark:text-white">{perfil.email}</b></span>}{perfil.telefone && <span>Telefone de acesso: <b className="text-brand-navy dark:text-white">{fmtTelefone(perfil.telefone)}</b></span>}</div>
             <Btn variante="primario" type="submit" carregando={salvando === 'perfil'}><Save className="h-4 w-4" />Salvar</Btn>
           </form>
+
+          <section className="card p-5">
+            <div className="flex items-center gap-2 font-display text-base font-semibold"><Globe className="h-4 w-4 text-brand-cyan" />Área do cliente</div>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Seus clientes entram com usuário e senha para ver vencimento, pagamentos e sua chave Pix.</p>
+            <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 p-3 dark:bg-night-soft"><div className="min-w-0 flex-1 truncate text-sm font-semibold">{linkArea(perfil)}</div><Btn onClick={() => copiar(linkArea(perfil))}><Copy className="h-4 w-4" />Copiar</Btn></div>
+          </section>
 
           {perfil.email && (
             <form onSubmit={trocarSenha} className="card flex flex-wrap items-end gap-2 p-5">

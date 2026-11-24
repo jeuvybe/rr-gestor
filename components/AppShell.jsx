@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Wallet, Package, MessageCircle, UserCircle2, Shield, LogOut, Menu, X, Crown, AlertTriangle, Lock, Settings,
+  LayoutDashboard, Users, Server, Wallet, Package, MessageCircle, UserCircle2, Shield, LogOut, Menu, X, Crown, AlertTriangle, Lock, Settings,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { BotaoTema, ToastProvider } from '@/components/ui';
@@ -16,6 +16,7 @@ export const usePainel = () => useContext(Ctx);
 const NAV = [
   ['/painel', 'Dashboard', LayoutDashboard],
   ['/painel/clientes', 'Clientes', Users],
+  ['/painel/servidores', 'Servidores', Server],
   ['/painel/financeiro', 'Financeiro', Wallet],
   ['/painel/planos', 'Planos', Package],
   ['/painel/whatsapp', 'WhatsApp', MessageCircle],

@@ -7,7 +7,10 @@ Sistema de gestão de clientes e cobranças pelo WhatsApp da **RR Tecnologia**. 
 - **Login e cadastro** por e-mail e senha, ou por telefone com código de 6 dígitos enviado pelo WhatsApp.
 - **Painel do assinante:**
   - Dashboard com cards e variação contra o mês anterior, gráficos, filtros, tema claro/escuro, exportação CSV e PDF.
-  - Clientes: cadastro, abas de situação, importação e exportação, registro de pagamento com renovação do vencimento e cobrança manual.
+  - Clientes no estilo Gestor Lite: usuário, senha da área do cliente, MAC/ID externo, número de telas, servidor com cor, liga/desliga na própria lista, abas (ativos, expiram hoje, inadimplentes, com alerta, desativados) e importação da planilha do Gestor Lite.
+  - Botões de mensagem em cada cliente: o verde envia o modelo do plano e o **FAST** envia na hora o modelo marcado como FAST.
+  - **Opções** do cliente: renovar baseado no plano, enviar cobrança, editar, excluir, faturas, perfil, enviar recibo, alerta e envio de qualquer modelo de mensagem.
+  - Servidores (nome e cor) e modelos de mensagem livres (Cobranças, Recibos, BLOQUEIO…), com variáveis como `{usuario}`, `{senha}`, `{telas}`, `{servidor}` e `{link_area}`.
   - Financeiro, planos próprios, conexão do WhatsApp por QR Code e mensagens automáticas editáveis.
 - **Cobrança automática** todo dia às 9h, horário de Brasília: lembrete X dias antes, no dia e X dias depois do vencimento. Cada cliente recebe no máximo uma mensagem por dia, e a mesma cobrança nunca sai duas vezes.
 - **Painel administrador:**
@@ -15,6 +18,7 @@ Sistema de gestão de clientes e cobranças pelo WhatsApp da **RR Tecnologia**. 
   - Liberação manual de pagamento: escolhe o plano e os meses.
   - Bloqueio de contas e edição dos planos do sistema.
   - Configurações: Pix, WhatsApp de suporte e o WhatsApp que envia os códigos de login.
+- **Área do cliente** (`/c/<sua-empresa>`): o cliente entra com usuário (ou WhatsApp) e senha e vê vencimento, valor, plano, telas, a chave Pix e os pagamentos recebidos.
 - **Página inicial pública** com os planos e preços lidos do banco.
 
 **Tecnologias:**
@@ -61,6 +65,7 @@ Quando aparecer **Ready**, abra <http://localhost:3000/login>.
 | Assinante (Bia Net Provedor, plano Profissional) | botão **Entrar como assinante**, ou `assinante@demo.com` com qualquer senha |
 | Administrador | botão **Entrar como admin**, ou `admin@demo.com` com qualquer senha |
 | Conta nova | **Criar conta** por e-mail (qualquer senha) ou por telefone (código **123456**) |
+| Área do cliente | link em **Clientes › Área do cliente**; entre com usuário `cliente.demo` e senha `1234` |
 
 **O que dá para testar:**
 - **WhatsApp:** em **WhatsApp › Gerar QR Code**, a conexão é simulada e fica "Conectado" depois de uns segundos.
@@ -77,7 +82,7 @@ Quando aparecer **Ready**, abra <http://localhost:3000/login>.
 ### 1. Supabase (banco e login)
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Abra **SQL Editor**, cole todo o arquivo `supabase/migrations/0001_schema.sql` e clique em **Run**.
+2. Abra **SQL Editor**, cole todo o arquivo `supabase/migrations/0001_schema.sql` e clique em **Run**. Depois faça o mesmo com `0002_servidores_modelos_area_cliente.sql`.
 3. Em **Project Settings › API**, copie a `Project URL`, a chave `anon public` e a chave `service_role`. A `service_role` é secreta.
 4. Em **Authentication › URL Configuration**:
    - **Site URL**: `https://seu-dominio.com.br`
