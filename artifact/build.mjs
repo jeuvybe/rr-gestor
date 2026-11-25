@@ -57,6 +57,7 @@ fs.writeFileSync(path.join(saida, 'index.html'), `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>RR Gestor · demonstração</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201080%201080%22%3E%3Crect%20width%3D%221080%22%20height%3D%221080%22%20rx%3D%22220%22%20fill%3D%22%230B1F3A%22/%3E%3Cg%20fill%3D%22%23F3F7FC%22%20fill-rule%3D%22evenodd%22%3E%3Cpath%20d%3D%22M194%20284H377.5A147.5%20147.5%200%200%201%20377.5%20579H273V755H194ZM273%20363V500H377.5A68.5%2068.5%200%200%200%20377.5%20363Z%22/%3E%3Cpath%20d%3D%22M345.5%20594H437.5L531%20755H439Z%22/%3E%3Cpath%20d%3D%22M554%20284H737.5A147.5%20147.5%200%200%201%20737.5%20579H633V755H554ZM633%20363V500H737.5A68.5%2068.5%200%200%200%20737.5%20363Z%22/%3E%3C/g%3E%3Cpath%20d%3D%22M705.5%20594H797.5L891%20755H799Z%22%20fill%3D%22%2300B8D9%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">

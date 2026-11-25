@@ -29,7 +29,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-[1200px] items-center gap-2 px-4 py-4 sm:gap-3 sm:px-5 sm:py-5">
-        <Link href="/" className="flex flex-1 items-center gap-2.5"><Logo className="h-7 w-9" /><span className="whitespace-nowrap font-display text-lg font-bold max-[359px]:sr-only">RR Gestor</span></Link>
+        <Link href="/" className="flex flex-1 items-center gap-2.5"><Logo className="h-7 w-auto" /><span className="whitespace-nowrap font-display text-lg font-bold max-[359px]:sr-only">RR Gestor</span></Link>
         <BotaoTema />
         <Link href="/login" className="hidden h-10 items-center rounded-lg px-3 text-sm font-semibold sm:inline-flex">Entrar</Link>
         <Link href="/cadastro" className="inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-brand-cyan px-3.5 text-sm font-semibold text-brand-navy sm:px-4">Teste grátis</Link>
@@ -88,7 +88,7 @@ export default async function Home() {
       </section>
 
       <footer className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-5 py-8 text-sm text-slate-500">
-        <span className="flex items-center gap-2"><Logo className="h-5 w-7" />RR Tecnologia</span>
+        <span className="flex items-center gap-2"><Logo className="h-5 w-auto" />RR Tecnologia</span>
         <span>© {new Date().getFullYear()} RR Gestor</span>
       </footer>
     </div>

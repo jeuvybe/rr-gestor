@@ -466,7 +466,7 @@ export default function Dashboard({ dados, empresa }) {
         <div ref={relRef} className="space-y-5 pt-5">
           {imprimindo && (
             <div className="flex items-start justify-between gap-6 border-b border-line pb-4" data-pdf-block>
-              <div className="flex items-center gap-3"><Logo className="h-9 w-11" /><div><div className="font-display text-xl font-bold">Relatório de gestão</div><div className="text-sm text-slate-500">{empresa} · {P.nome} · gerado em {fmtData(ref)}</div></div></div>
+              <div className="flex items-center gap-3"><Logo className="h-9 w-auto" /><div><div className="font-display text-xl font-bold">Relatório de gestão</div><div className="text-sm text-slate-500">{empresa} · {P.nome} · gerado em {fmtData(ref)}</div></div></div>
               <div className="max-w-[55%] text-right text-xs text-slate-500">{resumoFiltros.join(' · ')}</div>
             </div>
           )}

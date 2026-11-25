@@ -37,7 +37,7 @@ function Carregando({ texto, erro }) {
   return (
     <div className="grid min-h-screen place-items-center bg-brand-navy p-6 text-white">
       <div className="max-w-sm text-center">
-        <svg viewBox="320 446 344 260" className="mx-auto h-12 w-16" aria-hidden="true"><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="43.5"><path d="M342.5 683V468h67.75a54.25 54.25 0 0 1 0 108.5H342.5M402.5 576.5l56 106.5" stroke="#fff" /><path d="M519 683V468h67.75a54.25 54.25 0 0 1 0 108.5H519" stroke="#fff" /><path d="M578.5 576.5l58 106.5" stroke="#00B8D9" /></g></svg>
+        <svg viewBox="194 284 697 471" className="mx-auto h-12 w-auto" style={{ aspectRatio: '697 / 471' }} aria-hidden="true"><g fill="#fff" fillRule="evenodd"><path d="M194 284H377.5A147.5 147.5 0 0 1 377.5 579H273V755H194ZM273 363V500H377.5A68.5 68.5 0 0 0 377.5 363Z" /><path d="M345.5 594H437.5L531 755H439Z" /><path d="M554 284H737.5A147.5 147.5 0 0 1 737.5 579H633V755H554ZM633 363V500H737.5A68.5 68.5 0 0 0 737.5 363Z" /></g><path d="M705.5 594H797.5L891 755H799Z" fill="#00B8D9" /></svg>
         <div className="mt-5 font-display text-xl font-bold">RR Gestor · demonstração</div>
         {erro ? <p className="mt-3 text-sm text-rose-300">{erro}</p> : <p className="mt-3 flex items-center justify-center gap-2 text-sm text-cyan-100/80"><Loader2 className="h-4 w-4 animate-spin" />{texto}</p>}
         <p className="mt-6 text-xs text-cyan-100/50">Banco, login e WhatsApp simulados aqui mesmo, sem servidor. Nada sai desta página.</p>

@@ -38,7 +38,7 @@ export default function TelaRenovacao({ sb, perfil, uso, sair, verificar }) {
     <div className="min-h-screen bg-brand-bg dark:bg-night-bg">
       <header className="border-b border-line bg-white dark:border-night-line dark:bg-night-card">
         <div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
-          <Logo className="h-7 w-9" /><span className="flex-1 font-display text-[17px] font-bold">RR Gestor</span>
+          <Logo className="h-7 w-auto" /><span className="flex-1 font-display text-[17px] font-bold">RR Gestor</span>
           <BotaoTema />
           <button onClick={sair} className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-brand-navy dark:hover:bg-night-soft dark:hover:text-white"><LogOut className="h-4 w-4" />Sair</button>
         </div>

@@ -61,7 +61,7 @@ export default function AppShell({ perfil: perfilInicial, uso: usoInicial, area 
 
   const lateral = (
     <div className="flex h-full flex-col bg-brand-navy px-3 py-5 dark:bg-[#040D18]">
-      <Link href={area === 'admin' ? '/admin' : '/painel'} className="mb-6 flex items-center gap-2.5 px-2"><Logo claro className="h-7 w-9" /><span className="font-display text-[17px] font-bold text-white">RR Gestor</span></Link>
+      <Link href={area === 'admin' ? '/admin' : '/painel'} className="mb-6 flex items-center gap-2.5 px-2"><Logo claro className="h-7 w-auto" /><span className="font-display text-[17px] font-bold text-white">RR Gestor</span></Link>
       {area === 'admin' ? (
         <>
           <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Administração</div>

@@ -8,7 +8,7 @@ export default function AuthLayout({ children }) {
     <ToastProvider>
       <div className="grid min-h-screen lg:grid-cols-[1fr_1.1fr]">
         <aside className="relative hidden overflow-hidden bg-brand-navy p-12 text-white lg:flex lg:flex-col">
-          <Link href="/" className="flex items-center gap-3"><Logo claro className="h-8 w-10" /><span className="font-display text-lg font-bold">RR Gestor</span></Link>
+          <Link href="/" className="flex items-center gap-3"><Logo claro className="h-8 w-auto" /><span className="font-display text-lg font-bold">RR Gestor</span></Link>
           <div className="my-auto max-w-md">
             <h1 className="font-display text-[40px] font-bold leading-[1.08]">Clientes, cobranças e WhatsApp num só lugar.</h1>
             <ul className="mt-8 space-y-3 text-cyan-50/90">
@@ -22,7 +22,7 @@ export default function AuthLayout({ children }) {
         </aside>
         <main className="flex flex-col px-5 py-6 sm:px-10">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 lg:invisible"><Logo className="h-7 w-9" /><span className="font-display font-bold">RR Gestor</span></Link>
+            <Link href="/" className="flex items-center gap-2 lg:invisible"><Logo className="h-7 w-auto" /><span className="font-display font-bold">RR Gestor</span></Link>
             <BotaoTema />
           </div>
           <div className="mx-auto my-auto w-full max-w-[420px] py-10">{children}</div>
